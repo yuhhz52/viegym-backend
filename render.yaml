@@ -1,0 +1,57 @@
+services:
+  - type: web
+    name: viegym-backend
+    runtime: docker
+    dockerfilePath: ./viegymapp/Dockerfile
+    dockerContext: ./viegymapp
+    plan: free
+    region: singapore
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: DATABASE_URL
+        fromDatabase:
+          name: viegym-db
+          property: connectionString
+      - key: JWT_SECRET
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: RABBITMQ_HOST
+        sync: false
+      - key: RABBITMQ_PORT
+        value: 5671
+      - key: RABBITMQ_USERNAME
+        sync: false
+      - key: RABBITMQ_VHOST
+        sync: false
+      - key: RABBITMQ_PASSWORD
+        sync: false
+      - key: MAIL_USERNAME
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: MOBILE_AUTH_URL
+        sync: false
+      - key: SUPER_ADMIN_EMAIL
+        sync: false
+      - key: SUPER_ADMIN_PASSWORD
+        sync: false
+
+databases:
+  - name: viegym-db
+    plan: free
+    databaseName: viegym
+    user: viegym
+    region: singapore

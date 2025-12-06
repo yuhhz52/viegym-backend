@@ -1,0 +1,41 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://postgres:5432/viegym
+    username: postgres
+    password: 123456
+  data:
+    redis:
+      host: redis
+      port: 6379
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        jdbc:
+          time_zone: Asia/Ho_Chi_Minh
+
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+            scope:
+              - email
+              - profile
+
+viegym:
+  app:
+    jwtCookieName: viegym-jwt
+    jwtRefreshCookieName: viegym-jwt-refresh
+    jwtSecret: "1c4e9676c4fb52381bac0b849320e2fbd92ef2e3ccf42c8938900d51598d91f7"
+    jwtExpirationMs: 604800000
+    jwtRefreshExpirationMs: 604800000
+    cookieSecure: true  # Bật secure cookie trong production (HTTPS)
+    frontendUrl: "http://localhost:5173"  # Cập nhật theo domain thực tế khi deploy
