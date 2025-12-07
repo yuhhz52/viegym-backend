@@ -50,7 +50,7 @@ public class DataSourceConfig {
             String username = dbUri.getUserInfo().split(":")[0];
             String password = dbUri.getUserInfo().split(":")[1];
             String host = dbUri.getHost();
-            int port = dbUri.getPort();
+            int port = dbUri.getPort() == -1 ? 5432 : dbUri.getPort(); // Default PostgreSQL port
             String dbName = dbUri.getPath().substring(1); // Bỏ dấu / đầu tiên
 
             // Tạo JDBC URL đúng định dạng
