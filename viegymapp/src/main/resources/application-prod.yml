@@ -49,6 +49,9 @@ spring:
     ssl:
       enabled: true
       algorithm: TLSv1.2
+    listener:
+      simple:
+        auto-startup: false  # Prevent RabbitMQ from blocking startup
   
   mail:
     host: smtp.gmail.com
@@ -106,6 +109,10 @@ management:
   health:
     defaults:
       enabled: true
+    mail:
+      enabled: false  # Disable mail health check to prevent timeout issues
+    rabbit:
+      enabled: false  # Disable RabbitMQ health check (listeners disabled)
 
 # Logging configuration for production
 logging:
