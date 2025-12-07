@@ -37,6 +37,11 @@ public class JwtUtils {
     @Value("${viegym.app.jwtRefreshExpirationMs}")
     private Long jwtRefreshExpirationMs;
 
+    // Getter for cookie name (used in WebSocket security)
+    public String getJwtCookieName() {
+        return jwtCookie;
+    }
+
     @Value("${viegym.app.cookieSecure:true}")
     private boolean cookieSecure;
 
@@ -104,8 +109,18 @@ public class JwtUtils {
     public String getJwtFromCookies(HttpServletRequest request) {
         return getCookieValueByName(request, jwtCookie);
     }
+    
     public String getJwtRefreshFromCookies(HttpServletRequest request) {
         return getCookieValueByName(request, jwtRefreshCookie);
+    }
+    
+    // Lấy Token từ Authorization header (Bearer token)
+    public String getJwtFromHeader(HttpServletRequest request) {
+        String bearerToken = request.getHeader("Authorization");
+        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
+            return bearerToken.substring(7);
+        }
+        return null;
     }
 
     public ResponseCookie getCleanJwtCookie() {

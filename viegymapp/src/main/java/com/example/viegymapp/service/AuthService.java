@@ -138,17 +138,20 @@ public class AuthService {
         final String refreshToken;
         if (refreshTokenFromCookie != null && !refreshTokenFromCookie.isEmpty()) {
             refreshToken = refreshTokenFromCookie;
-        } else if (refreshRequest != null && refreshRequest.getRefreshToken() != null) {
+        } else if (refreshRequest != null && refreshRequest.getRefreshToken() != null 
+                   && !refreshRequest.getRefreshToken().isEmpty()) {
             refreshToken = refreshRequest.getRefreshToken();
         } else {
-            refreshToken = null;
+            throw new AppException(ErrorCode.TOKEN_REFRESH_FAILED);
         }
 
-        if (refreshToken != null && !refreshToken.isEmpty()) {
-            return refreshTokenService.findByToken(refreshToken)
-                    .map(refreshTokenService::verifyExpiration)
-                    .map(RefreshToken::getUser)
-                    .map(user -> {
+        return refreshTokenService.findByToken(refreshToken)
+                .map(token -> {
+                    try {
+                        // Verify expiration
+                        RefreshToken verifiedToken = refreshTokenService.verifyExpiration(token);
+                        var user = verifiedToken.getUser();
+                        
                         List<String> roles = Optional.ofNullable(user.getUserRoles())
                                 .orElse(Collections.emptySet())
                                 .stream()
@@ -157,6 +160,7 @@ public class AuthService {
                         if (roles.isEmpty()) {
                             roles = Collections.singletonList("ROLE_USER");
                         }
+                        
                         String newAccessToken = jwtUtils.generateTokenFromUsername(user.getEmail(), roles);
                         ResponseCookie jwtCookie = jwtUtils.generateJwtCookie(user.getEmail(), roles);
                         response.addHeader(HttpHeaders.SET_COOKIE, jwtCookie.toString());
@@ -166,11 +170,13 @@ public class AuthService {
                                 .accessToken(newAccessToken)
                                 .refreshToken(refreshToken)
                                 .build();
-                    })
-                    .orElseThrow(() -> new AppException(ErrorCode.TOKEN_REFRESH_FAILED));
-        }
-
-        throw new AppException(ErrorCode.TOKEN_REFRESH_FAILED);
+                    } catch (AppException e) {
+                        throw e;
+                    } catch (Exception e) {
+                        throw new AppException(ErrorCode.TOKEN_REFRESH_FAILED);
+                    }
+                })
+                .orElseThrow(() -> new AppException(ErrorCode.TOKEN_REFRESH_FAILED));
     }
 
 }
