@@ -81,8 +81,8 @@ public class WebSecurityConfig {
                         .requestMatchers("/api/exercises/**").permitAll()
                         .requestMatchers("/api/workouts/**").authenticated()
                         .requestMatchers("/oauth2/**", "/login/**", "/error").permitAll()
-                        .requestMatchers("/mobile-auth-success").permitAll() // Allow mobile OAuth callback page
-                        .requestMatchers("/api/mobile/auth/check-oauth").permitAll() // Allow mobile to poll for OAuth result
+                        .requestMatchers("/mobile-auth-success").permitAll()
+                        .requestMatchers("/api/mobile/auth/check-oauth").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/", "/actuator/**", "/health", "/ws/**").permitAll()
                         .anyRequest().authenticated()

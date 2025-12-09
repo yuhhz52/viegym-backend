@@ -37,11 +37,17 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Value("${spring.rabbitmq.port:5672}")
     private int rabbitPort;
     
+    @Value("${spring.rabbitmq.stomp.port:61613}")
+    private int rabbitStompPort;
+    
     @Value("${spring.rabbitmq.username:guest}")
     private String rabbitUsername;
     
     @Value("${spring.rabbitmq.password:guest}")
     private String rabbitPassword;
+    
+    @Value("${spring.rabbitmq.virtual-host:/}")
+    private String rabbitVirtualHost;
 
     @Autowired(required = false)
     private JwtUtils jwtUtils;
@@ -51,9 +57,22 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
-        // Use simple in-memory broker (simpler, no RabbitMQ dependency for WebSocket)
-        config.enableSimpleBroker("/topic", "/queue");
+        // Use RabbitMQ STOMP broker for scalable WebSocket across multiple servers
+        // This allows WebSocket messages to be shared across multiple application instances
+        config.enableStompBrokerRelay("/topic", "/queue")
+                .setRelayHost(rabbitHost)
+                .setRelayPort(rabbitStompPort)
+                .setClientLogin(rabbitUsername)
+                .setClientPasscode(rabbitPassword)
+                .setVirtualHost(rabbitVirtualHost)
+                .setSystemLogin(rabbitUsername)
+                .setSystemPasscode(rabbitPassword)
+                .setSystemHeartbeatSendInterval(20000)
+                .setSystemHeartbeatReceiveInterval(20000);
+        
         config.setApplicationDestinationPrefixes("/app");
+        
+        logger.info("WebSocket configured with RabbitMQ STOMP broker at {}:{}", rabbitHost, rabbitStompPort);
     }
 
     @Override

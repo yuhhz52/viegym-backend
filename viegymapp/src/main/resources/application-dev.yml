@@ -39,6 +39,9 @@ spring:
     port: 5672
     username: guest
     password: guest
+    virtual-host: /
+    stomp:
+      port: 61613  # RabbitMQ STOMP plugin port (default: 61613)
   mail:
     host: smtp.gmail.com
     port: 587

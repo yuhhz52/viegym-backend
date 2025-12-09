@@ -16,13 +16,7 @@ public class OpenApiConfig {
                 .info(new Info()
                         .title("ViegymApp API Documentation")
                         .description("""
-                                📘 REST API cho ứng dụng Viegym - Quản lý tập luyện, dinh dưỡng, sức khỏe.
-                                
-                                Bao gồm các module:
-                                - 🏋️ Workout Sessions (Buổi tập)
-                                - 🍽️ Nutrition Logs (Nhật ký ăn uống)
-                                - ❤️ Health Logs (Theo dõi sức khỏe)
-                                - 🧑‍💻 User Management
+                                REST API cho ứng dụng Viegym - Quản lý tập luyện, dinh dưỡng, sức khỏe.                           
                                 """)
                         .version("v1.0.0")
                         .contact(new Contact()

@@ -47,26 +47,21 @@ public class BookingServiceImpl implements BookingService {
     @Override
     public TimeSlotResponse createTimeSlot(TimeSlotRequest request) {
         User currentUser = getCurrentUser();
-        
         // Verify user is a coach
         boolean isCoach = currentUser.getUserRoles().stream()
             .anyMatch(userRole -> userRole.getRole().getName() == PredefinedRole.ROLE_COACH);
-        
         if (!isCoach) {
             throw new AppException(ErrorCode.UNAUTHORIZED);
         }
-        
         // Check for overlapping time slots
         boolean hasOverlap = timeSlotRepository.existsOverlappingSlot(
             currentUser.getId(),
             request.getStartTime(),
             request.getEndTime()
         );
-        
         if (hasOverlap) {
             throw new AppException(ErrorCode.TIMESLOT_OVERLAPS);
         }
-        
         CoachTimeSlot timeSlot = timeSlotMapper.toEntity(request);
         timeSlot.setCoach(currentUser);
         
@@ -270,7 +265,6 @@ public class BookingServiceImpl implements BookingService {
     @Override
     public BookingResponse cancelBooking(UUID bookingId) {
         User currentUser = getCurrentUser();
-        
         // Anti-spam: Check cancellation rate limit (max 10 cancellations per hour)
         OffsetDateTime oneHourAgo = OffsetDateTime.now().minusHours(1);
         long recentCancellations = bookingRepository.countByClientAndStatusAndUpdatedAtAfter(

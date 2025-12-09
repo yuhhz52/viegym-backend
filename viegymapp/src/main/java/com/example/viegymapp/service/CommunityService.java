@@ -16,23 +16,19 @@ public interface CommunityService {
     CommunityPostResponse updatePost(UUID id, CommunityPostRequest request);
     void deletePost(UUID id);
     boolean isPostOwner(UUID postId, String username);
-
     // Comments
     PostCommentResponse addComment(UUID postId, PostCommentRequest request);
     List<PostCommentResponse> getCommentsByPost(UUID postId);
     PostCommentResponse updateComment(UUID commentId, PostCommentRequest request);
     void deleteComment(UUID commentId);
     boolean isCommentOwner(UUID commentId, String username);
-
     // Likes
     PostLikeResponse likePost(UUID postId);
     PostLikeResponse unlikePost(UUID postId);
-
     // Reports
     void reportPost(UUID postId, com.example.viegymapp.dto.request.PostReportRequest request);
     List<com.example.viegymapp.dto.response.PostReportResponse> getPostReports(UUID postId);
     void clearPostReports(UUID postId);
-
     // Admin actions
     CommunityPostResponse approvePost(UUID postId);
     int activateAllPendingPosts();

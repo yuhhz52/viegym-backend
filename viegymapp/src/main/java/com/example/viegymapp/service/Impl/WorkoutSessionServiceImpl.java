@@ -44,13 +44,10 @@ public class WorkoutSessionServiceImpl implements WorkoutSessionService {
         }
         
         WorkoutSession savedSession = sessionRepo.save(session);
-        
         // Tăng streak real-time khi tạo workout
         streakService.calculateAndUpdateStreak(user.getId());
-        
-        // Tính volume từ logs (nếu có)
+        // Tính volume từ logs
         double totalVolume = calculateSessionVolume(savedSession);
-        
         // Cập nhật stats: +1 workout và tổng volume
         Integer currentWorkouts = user.getTotalWorkouts() != null ? user.getTotalWorkouts() : 0;
         Double currentVolume = user.getTotalVolume() != null ? user.getTotalVolume() : 0.0;
@@ -66,12 +63,10 @@ public class WorkoutSessionServiceImpl implements WorkoutSessionService {
         if (session.getLogs() == null || session.getLogs().isEmpty()) {
             return 0.0;
         }
-        
         return session.getLogs().stream()
                 .mapToDouble(log -> log.calculateVolume())
                 .sum();
     }
-
     @Override
     public List<WorkoutSessionResponse> getAllSession() {
         var user = getCurrentUser();
@@ -79,7 +74,6 @@ public class WorkoutSessionServiceImpl implements WorkoutSessionService {
                 .map(workoutSessionMapper::toResponse)
                 .toList();
     }
-
     @Override
     public WorkoutSessionResponse getSessionById(UUID id) {
         return sessionRepo.findById(id)

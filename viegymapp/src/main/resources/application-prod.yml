@@ -1,6 +1,4 @@
 spring:
-  # DataSource được cấu hình trong DataSourceConfig.java
-  # Tự động chuyển đổi DATABASE_URL từ Render sang JDBC URL
   datasource:
     hikari:
       maximum-pool-size: 10
@@ -11,7 +9,7 @@ spring:
   
   jpa:
     hibernate:
-      ddl-auto: update  # Tự động tạo/cập nhật tables khi deploy
+      ddl-auto: update
     show-sql: false
     properties:
       hibernate:
@@ -46,12 +44,14 @@ spring:
     username: ${RABBITMQ_USERNAME}
     password: ${RABBITMQ_PASSWORD}
     virtual-host: ${RABBITMQ_VHOST:/}
+    stomp:
+      port: ${RABBITMQ_STOMP_PORT:61613}
     ssl:
       enabled: true
       algorithm: TLSv1.2
     listener:
       simple:
-        auto-startup: false  # Prevent RabbitMQ from blocking startup
+        auto-startup: false
   
   mail:
     host: smtp.gmail.com

@@ -9,16 +9,10 @@ import java.util.UUID;
 public interface ChatService {
     
     ChatMessageResponse sendMessage(ChatMessageRequest request);
-    
     List<ChatMessageResponse> getMyMessages();
-    
     List<ChatMessageResponse> getConversationWith(UUID userId);
-    
     ChatMessageResponse markAsRead(UUID messageId);
-    
     List<ChatMessageResponse> getUnreadMessages();
-    
     Long getUnreadCount();
-    
     void deleteConversation(UUID userId);
 }

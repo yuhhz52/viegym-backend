@@ -15,33 +15,20 @@ public interface BookingService {
     
     // Time Slots
     TimeSlotResponse createTimeSlot(TimeSlotRequest request);
-    
     List<TimeSlotResponse> getMyTimeSlots();
-    
     List<TimeSlotResponse> getAvailableSlotsByCoach(UUID coachId);
-    
     List<TimeSlotResponse> getAllAvailableSlots();
-    
     TimeSlotResponse updateTimeSlot(UUID slotId, TimeSlotRequest request);
-    
     void deleteTimeSlot(UUID slotId);
     
     // Bookings
     BookingResponse createBooking(BookingRequest request);
-    
     List<BookingResponse> getMyBookings();
-    
     List<BookingResponse> getCoachBookings();
-    
     BookingResponse getBookingById(UUID bookingId);
-    
     BookingResponse confirmBooking(UUID bookingId);
-    
     BookingResponse cancelBooking(UUID bookingId);
-    
     BookingResponse completeBooking(UUID bookingId, String coachNotes);
-    
     List<BookingResponse> getBookingsByDateRange(LocalDateTime start, LocalDateTime end);
-    
     List<ClientSummaryResponse> getMyClients();
 }
