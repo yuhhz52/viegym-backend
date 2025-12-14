@@ -24,4 +24,5 @@ public class BookingResponse {
     BookingSession.BookingStatus status;
     String clientNotes;
     String coachNotes;
+    LocalDateTime expiredAt; // Booking expires if not paid within 10 minutes (for PENDING bookings)
 }

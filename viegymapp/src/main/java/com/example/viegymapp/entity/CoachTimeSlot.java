@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -45,9 +46,18 @@ public class CoachTimeSlot extends BaseEntity {
     @Column(nullable = false)
     SlotStatus status = SlotStatus.AVAILABLE;
 
+    @Column(precision = 10, scale = 2)
+    BigDecimal price;
+    
+    @Column(nullable = false)
+    Integer capacity = 1; // Default 1 for 1-1 PT, >1 for group classes
+    
+    @Column(nullable = false)
+    Integer bookedCount = 0; // Number of confirmed bookings for this slot
+
     public enum SlotStatus {
         AVAILABLE,
-        BOOKED,
-        CANCELLED
+        FULL,    // When bookedCount >= capacity
+        DISABLED // Coach disabled this slot
     }
 }

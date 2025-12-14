@@ -87,10 +87,13 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         registration.interceptors(new ChannelInterceptor() {
             @Override
             public Message<?> preSend(Message<?> message, MessageChannel channel) {
-                if (jwtUtils != null && userDetailsService != null) {
-                    StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
+                StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
+                
+                if (accessor != null) {
+                    StompCommand command = accessor.getCommand();
                     
-                    if (accessor != null && StompCommand.CONNECT.equals(accessor.getCommand())) {
+                    // Handle CONNECT command - authentication
+                    if (StompCommand.CONNECT.equals(command) && jwtUtils != null && userDetailsService != null) {
                         // Extract token from headers
                         String token = null;
                         
@@ -137,6 +140,26 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                             }
                         } else {
                             logger.warn("WebSocket connection attempt without valid token");
+                        }
+                    }
+                    
+                    // Handle SUBSCRIBE command - fix destination prefix
+                    if (StompCommand.SUBSCRIBE.equals(command)) {
+                        String destination = accessor.getDestination();
+                        if (destination != null && !destination.startsWith("/topic/") && !destination.startsWith("/queue/") && !destination.startsWith("/user/")) {
+                            // Fix destinations that are missing /topic prefix
+                            // Common patterns: /chat/, /notifications/, /likes/, etc.
+                            if (destination.startsWith("/chat/") || 
+                                destination.startsWith("/notifications/") || 
+                                destination.startsWith("/likes/") ||
+                                destination.startsWith("/comments/")) {
+                                String correctedDestination = "/topic" + destination;
+                                accessor.setDestination(correctedDestination);
+                                logger.info("Fixed subscription destination: {} -> {}", destination, correctedDestination);
+                            } else {
+                                // Log unexpected destination format for debugging
+                                logger.warn("Subscription to unexpected destination format: {}", destination);
+                            }
                         }
                     }
                 }

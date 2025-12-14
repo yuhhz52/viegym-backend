@@ -17,13 +17,15 @@ public interface CoachTimeSlotRepository extends JpaRepository<CoachTimeSlot, UU
     @Query("SELECT t FROM CoachTimeSlot t WHERE t.coach = :coach AND t.deleted = false ORDER BY t.startTime DESC")
     List<CoachTimeSlot> findByCoach(@Param("coach") User coach);
     
-    @Query("SELECT t FROM CoachTimeSlot t WHERE t.coach.id = :coachId AND t.status = 'AVAILABLE' AND t.startTime >= :now AND t.deleted = false ORDER BY t.startTime")
+    // Find slots that have available capacity (bookedCount < capacity)
+    @Query("SELECT t FROM CoachTimeSlot t WHERE t.coach.id = :coachId AND t.status = 'AVAILABLE' AND t.bookedCount < t.capacity AND t.startTime >= :now AND t.deleted = false ORDER BY t.startTime")
     List<CoachTimeSlot> findAvailableSlotsByCoach(@Param("coachId") UUID coachId, @Param("now") LocalDateTime now);
     
     @Query("SELECT t FROM CoachTimeSlot t WHERE t.coach.id = :coachId AND t.startTime >= :start AND t.endTime <= :end AND t.deleted = false ORDER BY t.startTime")
     List<CoachTimeSlot> findSlotsByCoachAndDateRange(@Param("coachId") UUID coachId, @Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
     
-    @Query("SELECT t FROM CoachTimeSlot t WHERE t.status = 'AVAILABLE' AND t.startTime >= :now AND t.deleted = false ORDER BY t.startTime")
+    // Find all slots with available capacity
+    @Query("SELECT t FROM CoachTimeSlot t WHERE t.status = 'AVAILABLE' AND t.bookedCount < t.capacity AND t.startTime >= :now AND t.deleted = false ORDER BY t.startTime")
     List<CoachTimeSlot> findAllAvailableSlots(@Param("now") LocalDateTime now);
     
     @Query("SELECT COUNT(t) > 0 FROM CoachTimeSlot t WHERE t.coach.id = :coachId AND t.deleted = false " +

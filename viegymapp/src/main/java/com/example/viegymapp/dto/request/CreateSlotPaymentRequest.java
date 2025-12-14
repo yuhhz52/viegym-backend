@@ -1,9 +1,9 @@
 package com.example.viegymapp.dto.request;
 
-import com.example.viegymapp.entity.BookingSession;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @Data
@@ -11,9 +11,13 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class BookingRequest {
+public class CreateSlotPaymentRequest {
     UUID timeSlotId;
     UUID coachId;
     String clientNotes;
-    BookingSession.BookingStatus status; // Optional status override
+    BigDecimal amount;
+    String paymentMethod;
+    String description;
+    String returnUrl;
+    String notifyUrl;
 }

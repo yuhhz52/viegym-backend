@@ -4,6 +4,7 @@ import com.example.viegymapp.entity.CoachTimeSlot;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -23,4 +24,7 @@ public class TimeSlotResponse {
     String notes;
     String location;
     CoachTimeSlot.SlotStatus status;
+    BigDecimal price;
+    Integer capacity;
+    Integer bookedCount;
 }

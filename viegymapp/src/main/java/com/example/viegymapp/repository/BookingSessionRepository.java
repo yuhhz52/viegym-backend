@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -48,4 +49,18 @@ public interface BookingSessionRepository extends JpaRepository<BookingSession, 
     
     @Query("SELECT COUNT(b) FROM BookingSession b WHERE b.client = :client AND b.status = :status AND b.updatedAt >= :since AND b.deleted = false")
     long countByClientAndStatusAndUpdatedAtAfter(@Param("client") User client, @Param("status") BookingSession.BookingStatus status, @Param("since") OffsetDateTime since);
+    
+    // Scheduled task queries
+    @Query("SELECT b FROM BookingSession b WHERE b.status = :status AND b.bookingTime < :cutoffTime AND b.deleted = false")
+    List<BookingSession> findByStatusAndBookingTimeBefore(@Param("status") BookingSession.BookingStatus status, @Param("cutoffTime") LocalDateTime cutoffTime);
+    
+    @Query("SELECT b FROM BookingSession b WHERE b.status = :status AND b.createdAt < :cutoffTime AND b.deleted = false")
+    List<BookingSession> findByStatusAndCreatedAtBefore(@Param("status") BookingSession.BookingStatus status, @Param("cutoffTime") Instant cutoffTime);
+    
+    @Query("SELECT b FROM BookingSession b WHERE b.status = :status AND b.createdAt < :cutoffTime AND b.deleted = false")
+    List<BookingSession> findByStatusAndCreatedAtBefore(@Param("status") BookingSession.BookingStatus status, @Param("cutoffTime") OffsetDateTime cutoffTime);
+    
+    // Query expired PENDING bookings
+    @Query("SELECT b FROM BookingSession b WHERE b.status = 'PENDING' AND b.expiredAt < :now AND b.deleted = false")
+    List<BookingSession> findExpiredPendingBookings(@Param("now") LocalDateTime now);
 }

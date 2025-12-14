@@ -271,11 +271,10 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     public void sendPushNotification(UUID userId, Notification notification) {
         try {
-            // Send via WebSocket
+            // Send via WebSocket to topic
             NotificationResponse response = notificationMapper.toResponse(notification);
-            messagingTemplate.convertAndSendToUser(
-                    userId.toString(),
-                    "/queue/notifications",
+            messagingTemplate.convertAndSend(
+                    "/topic/notifications/" + userId.toString(),
                     response
             );
             

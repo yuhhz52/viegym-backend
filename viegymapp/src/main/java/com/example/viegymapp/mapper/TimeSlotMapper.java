@@ -17,6 +17,7 @@ public interface TimeSlotMapper {
     @Mapping(target = "coach", ignore = true)
     @Mapping(target = "isAvailable", constant = "true")
     @Mapping(target = "status", constant = "AVAILABLE")
+    @Mapping(target = "bookedCount", constant = "0")
     CoachTimeSlot toEntity(TimeSlotRequest request);
 
     @Mapping(source = "coach.id", target = "coachId")

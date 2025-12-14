@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -47,11 +48,21 @@ public class BookingSession extends BaseEntity {
     @Column(length = 1000)
     String coachNotes;
 
+    @Column(precision = 10, scale = 2)
+    BigDecimal amount;
+
+    @Column
+    Boolean requiresPayment = false;
+    
+    @Column
+    LocalDateTime expiredAt; // Booking expires if not paid within 10 minutes
+
     public enum BookingStatus {
-        PENDING,
-        CONFIRMED,
-        COMPLETED,
-        CANCELLED,
-        NO_SHOW
+        PENDING,    // Created, waiting for payment (10 min expiry)
+        CONFIRMED,  // Payment successful
+        COMPLETED,  // Session completed
+        CANCELLED,  // User/coach cancelled
+        EXPIRED,    // PENDING booking expired (not paid in time)
+        NO_SHOW     // User didn't show up
     }
 }

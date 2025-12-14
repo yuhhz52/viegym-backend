@@ -58,8 +58,18 @@ public enum ErrorCode {
     TOO_MANY_CANCELLATIONS(1049, "Bạn đã hủy quá nhiều lịch hẹn. Vui lòng thử lại sau 1 giờ", HttpStatus.TOO_MANY_REQUESTS),
     SLOT_HAS_BOOKINGS(1050, "Không thể xóa khung giờ đã có lịch hẹn. Vui lòng hủy các lịch hẹn trước", HttpStatus.CONFLICT),
     TIMESLOT_OVERLAPS(1051, "Khung giờ này trùng với lịch đã tạo. Vui lòng chọn thời gian khác", HttpStatus.CONFLICT),
-    NOTIFICATION_NOT_FOUND(1052, "Thông báo không tồn tại", HttpStatus.NOT_FOUND)
-    ;
+    NOTIFICATION_NOT_FOUND(1052, "Thông báo không tồn tại", HttpStatus.NOT_FOUND),
+    PAYMENT_NOT_FOUND(1053, "Thanh toán không tồn tại", HttpStatus.NOT_FOUND),
+    PAYMENT_ALREADY_EXISTS(1054, "Lịch hẹn này đã được thanh toán", HttpStatus.CONFLICT),
+    PAYMENT_CREATION_FAILED(1055, "Không thể tạo thanh toán. Vui lòng thử lại", HttpStatus.INTERNAL_SERVER_ERROR),
+    INVALID_SIGNATURE(1056, "Chữ ký không hợp lệ", HttpStatus.BAD_REQUEST),
+    PAYMENT_NOT_COMPLETED(1057, "Thanh toán chưa hoàn thành", HttpStatus.BAD_REQUEST),
+    USER_NOT_FOUND(1058, "Người dùng không tồn tại", HttpStatus.NOT_FOUND),
+    PAYMENT_VERIFICATION_FAILED(1059, "Xác thực thanh toán thất bại", HttpStatus.BAD_REQUEST),
+    CANNOT_CANCEL_PAID_BOOKING(1060, "Không thể hủy lịch hẹn đã thanh toán. Vui lòng liên hệ admin để được hỗ trợ", HttpStatus.FORBIDDEN),
+    BOOKING_CREATION_FAILED(1061, "Tạo booking thất bại", HttpStatus.INTERNAL_SERVER_ERROR),
+    INVALID_COACH_FOR_SLOT(1062, "Coach không khớp với khung giờ này", HttpStatus.BAD_REQUEST),
+;
 
     ErrorCode(int code, String message, HttpStatusCode statusCode) {
         this.code = code;

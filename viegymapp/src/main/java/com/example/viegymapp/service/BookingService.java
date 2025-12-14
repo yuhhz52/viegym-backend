@@ -5,7 +5,6 @@ import com.example.viegymapp.dto.request.TimeSlotRequest;
 import com.example.viegymapp.dto.response.BookingResponse;
 import com.example.viegymapp.dto.response.ClientSummaryResponse;
 import com.example.viegymapp.dto.response.TimeSlotResponse;
-import com.example.viegymapp.entity.BookingSession;
 
 import java.time.LocalDateTime;
 import java.util.List;

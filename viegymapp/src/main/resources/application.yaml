@@ -1,8 +1,63 @@
 spring:
   profiles:
     default: dev
+  task:
+    scheduling:
+      enabled: true
 
 server:
   port: 8080
   error:
     include-message: always
+
+# =================================================================
+# VIEGYM BOOKING & PAYMENT CONFIGURATION
+# Similar to real-world platforms (Grab, Uber, Airbnb, Upwork)
+# =================================================================
+
+app:
+  base-url: ${APP_BASE_URL:http://localhost:3000}
+  
+  # Platform Fee Configuration
+  # Most platforms charge 10-20% commission
+  platform-fee-percentage: 15.0
+  
+  # Minimum Withdrawal Amount
+  # Prevents too many small transactions
+  minimum-withdrawal-amount: 50000
+  
+  # Refund Policy Configuration
+  # Hours before booking for different refund percentages
+  # Default policy (similar to Airbnb Flexible):
+  # - 24+ hours: 100% refund
+  # - 12-24 hours: 75% refund
+  # - 2-12 hours: 50% refund
+  # - 1-2 hours: 25% refund
+  # - < 1 hour: 0% refund
+  refund:
+    policy:
+      24h-percentage: 100
+      12h-percentage: 75
+      2h-percentage: 50
+      1h-percentage: 25
+  
+  # Auto-Complete Configuration
+  # Hours after booking time to auto-complete
+  booking:
+    auto-complete-hours: 24
+    max-per-10-minutes: 5
+
+  payout:
+    schedule: WEEKLY
+    security-days: 7
+  
+  # Rate Limiting
+  cancellation:
+    max-per-hour: 10
+
+# Payment Gateway Configuration
+vnpay:
+  tmn-code: ${VNPAY_TMN_CODE:DEMOV210}
+  hash-secret: ${VNPAY_HASH_SECRET:RAOEXHYVSDDIIENYWSLDIIZTANXUXZFJ}
+  url: https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
+  return-url: ${APP_BASE_URL:http://localhost:8080}/api/v1/payments/vnpay/callback
