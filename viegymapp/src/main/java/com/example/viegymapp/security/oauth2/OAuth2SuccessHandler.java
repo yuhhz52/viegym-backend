@@ -67,11 +67,11 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         
         var refreshToken = refreshTokenService.createRefreshToken(user.getId());
 
-        // ✅ URL ENCODE tokens (JWT chứa . và + sẽ bị corrupt nếu không encode)
+        // URL ENCODE tokens (JWT chứa . và + sẽ bị corrupt nếu không encode)
         String encodedAccessToken = java.net.URLEncoder.encode(accessToken, java.nio.charset.StandardCharsets.UTF_8);
         String encodedRefreshToken = java.net.URLEncoder.encode(refreshToken.getToken(), java.nio.charset.StandardCharsets.UTF_8);
 
-        // ✅ THÊM: Set cookie (backup nếu URL param fail)
+        // THÊM: Set cookie (backup nếu URL param fail)
         ResponseCookie accessTokenCookie = ResponseCookie.from("accessToken", accessToken)
                 .httpOnly(false)  // Cho FE đọc được
                 .secure(true)
