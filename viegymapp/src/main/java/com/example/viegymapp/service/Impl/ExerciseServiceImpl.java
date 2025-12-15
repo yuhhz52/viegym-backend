@@ -149,6 +149,9 @@ public class ExerciseServiceImpl implements ExerciseService {
             exercise.setTags(tagEntities);
         }
 
+        List<ExerciseMedia> tempMediaList = exercise.getMediaList();
+        exercise.setMediaList(null);
+        
         // Lưu exercise trước để có id
         Exercise savedExercise = exerciseRepository.save(exercise);
 
@@ -159,7 +162,7 @@ public class ExerciseServiceImpl implements ExerciseService {
         if (createRequest.getMediaList() != null && !createRequest.getMediaList().isEmpty()) {
             for (ExerciseMediaRequest mediaRequest : createRequest.getMediaList()) {
                 ExerciseMedia media = exerciseMediaMapper.toEntity(mediaRequest);
-                media.setExercise(savedExercise);
+                media.setExercise(savedExercise);  // ✅ BẮT BUỘC gán exercise trước khi save
                 savedMediaList.add(exerciseMediaRepository.save(media));
             }
         } 
@@ -175,7 +178,7 @@ public class ExerciseServiceImpl implements ExerciseService {
                     if (node.has("orderNo")) mediaRequest.setOrderNo(node.get("orderNo").asInt());
 
                     ExerciseMedia media = exerciseMediaMapper.toEntity(mediaRequest);
-                    media.setExercise(savedExercise);
+                    media.setExercise(savedExercise);  // ✅ BẮT BUỘC gán exercise
                     savedMediaList.add(exerciseMediaRepository.save(media));
                 }
             }
