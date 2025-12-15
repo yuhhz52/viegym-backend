@@ -21,7 +21,7 @@ public class CorsConfig {
             "http://localhost:8082",  // Expo alternate port
             "http://192.168.*.*:*",   // Local network (for mobile devices)
             "https://*.ngrok-free.dev", // Ngrok tunnel
-            "https://*.netlify.app",  // Netlify deployments (production + previews)
+            "https://viegym.netlify.app",
             "https://*.onrender.com"  // Render backend
         ));
 

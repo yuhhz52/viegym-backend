@@ -6,7 +6,6 @@ import com.example.viegymapp.dto.request.ExerciseRequest;
 import com.example.viegymapp.dto.response.*;
 import com.example.viegymapp.service.ExerciseService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
