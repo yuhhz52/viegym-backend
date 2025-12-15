@@ -57,22 +57,12 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
-        // Use RabbitMQ STOMP broker for scalable WebSocket across multiple servers
-        // This allows WebSocket messages to be shared across multiple application instances
-        config.enableStompBrokerRelay("/topic", "/queue")
-                .setRelayHost(rabbitHost)
-                .setRelayPort(rabbitStompPort)
-                .setClientLogin(rabbitUsername)
-                .setClientPasscode(rabbitPassword)
-                .setVirtualHost(rabbitVirtualHost)
-                .setSystemLogin(rabbitUsername)
-                .setSystemPasscode(rabbitPassword)
-                .setSystemHeartbeatSendInterval(20000)
-                .setSystemHeartbeatReceiveInterval(20000);
+
+        config.enableSimpleBroker("/topic", "/queue");
         
         config.setApplicationDestinationPrefixes("/app");
         
-        logger.info("WebSocket configured with RabbitMQ STOMP broker at {}:{}", rabbitHost, rabbitStompPort);
+        logger.info("WebSocket configured with simple in-memory message broker");
     }
 
     @Override

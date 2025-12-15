@@ -14,6 +14,8 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -68,11 +70,20 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
         String accessToken = jwtUtils.generateTokenFromUsername(user.getEmail(), roles);
         
-
+        // ✅ TẠO REFRESH TOKEN
         var refreshToken = refreshTokenService.createRefreshToken(user.getId());
 
+        // ✅ URL ENCODE TOKENS (vì JWT có ký tự đặc biệt)
+        String encodedAccessToken = URLEncoder.encode(accessToken, StandardCharsets.UTF_8);
+        String encodedRefreshToken = URLEncoder.encode(refreshToken.getToken(), StandardCharsets.UTF_8);
+
         // Sau khi xác thực thành công, redirect về FE kèm accessToken + refreshToken trên URL
-        String redirectUrl = frontendUrl + "/auth/callback?token=" + accessToken + "&refreshToken=" + refreshToken.getToken();
+        String redirectUrl = frontendUrl + "/auth/callback?token=" + encodedAccessToken + "&refreshToken=" + encodedRefreshToken;
+        
+        System.out.println("[OAuth2SuccessHandler] Redirecting to: " + frontendUrl + "/auth/callback?token=***&refreshToken=***");
+        System.out.println("[OAuth2SuccessHandler] Access token length: " + accessToken.length());
+        System.out.println("[OAuth2SuccessHandler] Refresh token length: " + refreshToken.getToken().length());
+        
         response.sendRedirect(redirectUrl);
     }
 }
