@@ -67,9 +67,12 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         }
 
         String accessToken = jwtUtils.generateTokenFromUsername(user.getEmail(), roles);
+        
 
-        // Sau khi xác thực thành công, redirect về FE kèm accessToken trên URL
-        String redirectUrl = frontendUrl + "/auth/callback?token=" + accessToken;
+        var refreshToken = refreshTokenService.createRefreshToken(user.getId());
+
+        // Sau khi xác thực thành công, redirect về FE kèm accessToken + refreshToken trên URL
+        String redirectUrl = frontendUrl + "/auth/callback?token=" + accessToken + "&refreshToken=" + refreshToken.getToken();
         response.sendRedirect(redirectUrl);
     }
 }
