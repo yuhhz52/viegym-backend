@@ -1,23 +1,18 @@
 package com.example.viegymapp.security.oauth2;
 
-import com.example.viegymapp.controller.MobileAuthController;
-import com.example.viegymapp.dto.response.UserInfoResponse;
 import com.example.viegymapp.entity.User;
 import com.example.viegymapp.repository.UserRepository;
 import com.example.viegymapp.security.jwt.JwtUtils;
 import com.example.viegymapp.service.RefreshTokenService;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
+import org.springframework.http.ResponseCookie;
 
 import java.io.IOException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -70,19 +65,38 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
         String accessToken = jwtUtils.generateTokenFromUsername(user.getEmail(), roles);
         
-        // ✅ TẠO REFRESH TOKEN
         var refreshToken = refreshTokenService.createRefreshToken(user.getId());
 
-        // ✅ URL ENCODE TOKENS (vì JWT có ký tự đặc biệt)
-        String encodedAccessToken = URLEncoder.encode(accessToken, StandardCharsets.UTF_8);
-        String encodedRefreshToken = URLEncoder.encode(refreshToken.getToken(), StandardCharsets.UTF_8);
+        // ✅ URL ENCODE tokens (JWT chứa . và + sẽ bị corrupt nếu không encode)
+        String encodedAccessToken = java.net.URLEncoder.encode(accessToken, java.nio.charset.StandardCharsets.UTF_8);
+        String encodedRefreshToken = java.net.URLEncoder.encode(refreshToken.getToken(), java.nio.charset.StandardCharsets.UTF_8);
 
-        // Sau khi xác thực thành công, redirect về FE kèm accessToken + refreshToken trên URL
+        // ✅ THÊM: Set cookie (backup nếu URL param fail)
+        ResponseCookie accessTokenCookie = ResponseCookie.from("accessToken", accessToken)
+                .httpOnly(false)  // Cho FE đọc được
+                .secure(true)
+                .sameSite("None")
+                .path("/")
+                .maxAge(30 * 60)  // 30 phút
+                .build();
+        response.addHeader("Set-Cookie", accessTokenCookie.toString());
+        
+        ResponseCookie refreshTokenCookie = ResponseCookie.from("refreshToken", refreshToken.getToken())
+                .httpOnly(false)
+                .secure(true)
+                .sameSite("None")
+                .path("/")
+                .maxAge(7 * 24 * 60 * 60)  // 7 ngày
+                .build();
+        response.addHeader("Set-Cookie", refreshTokenCookie.toString());
+
+        // Redirect kèm URL params (chính thức) + cookie (backup)
         String redirectUrl = frontendUrl + "/auth/callback?token=" + encodedAccessToken + "&refreshToken=" + encodedRefreshToken;
         
-        System.out.println("[OAuth2SuccessHandler] Redirecting to: " + frontendUrl + "/auth/callback?token=***&refreshToken=***");
-        System.out.println("[OAuth2SuccessHandler] Access token length: " + accessToken.length());
-        System.out.println("[OAuth2SuccessHandler] Refresh token length: " + refreshToken.getToken().length());
+        System.out.println("[OAuth2SuccessHandler] ✓ OAuth2 success for: " + user.getEmail());
+        System.out.println("[OAuth2SuccessHandler] ✓ Redirect URL: " + frontendUrl + "/auth/callback?token=***&refreshToken=***");
+        System.out.println("[OAuth2SuccessHandler] ✓ Token lengths - Access: " + accessToken.length() + ", Refresh: " + refreshToken.getToken().length());
+        System.out.println("[OAuth2SuccessHandler] ✓ Cookies set as backup");
         
         response.sendRedirect(redirectUrl);
     }
