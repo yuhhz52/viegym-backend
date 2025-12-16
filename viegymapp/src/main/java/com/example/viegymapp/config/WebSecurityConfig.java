@@ -87,7 +87,7 @@ public class WebSecurityConfig {
                         .requestMatchers("/mobile-auth-success").permitAll()
                         .requestMatchers("/api/mobile/auth/check-oauth").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                        .requestMatchers("/", "/actuator/**", "/health", "/ws/**").permitAll()
+                        .requestMatchers("/", "/actuator/**", "/health", "/ws/**", "/ping").permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2

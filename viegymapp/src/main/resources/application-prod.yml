@@ -65,11 +65,13 @@ spring:
       enabled: ${RABBITMQ_SSL:true}
       algorithm: TLSv1.2
 
-  data:
-    redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
-      password: ${REDIS_PASSWORD:}
+  # Redis - Currently not used in the application
+  # Uncomment if you need caching in the future
+  # data:
+  #   redis:
+  #     host: ${REDIS_HOST:localhost}
+  #     port: ${REDIS_PORT:6379}
+  #     password: ${REDIS_PASSWORD:}
 
 viegym:
   app:
@@ -106,9 +108,11 @@ management:
     defaults:
       enabled: true
     mail:
-      enabled: false  # Disable mail health check to prevent timeout issues
+      enabled: false  
     rabbit:
       enabled: true   # Enable RabbitMQ health check
+    redis:
+      enabled: false  # Redis not used currently
 
 # Logging configuration for production
 logging:

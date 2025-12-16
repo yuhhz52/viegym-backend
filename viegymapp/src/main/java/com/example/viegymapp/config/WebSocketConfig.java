@@ -31,24 +31,9 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     private static final Logger logger = LoggerFactory.getLogger(WebSocketConfig.class);
 
-    @Value("${spring.rabbitmq.host:localhost}")
-    private String rabbitHost;
+    // Note: These RabbitMQ configs are not used - we use enableSimpleBroker (in-memory)
+    // Keeping them for future reference if we need to switch to RabbitMQ STOMP relay
     
-    @Value("${spring.rabbitmq.port:5672}")
-    private int rabbitPort;
-    
-    @Value("${spring.rabbitmq.stomp.port:61613}")
-    private int rabbitStompPort;
-    
-    @Value("${spring.rabbitmq.username:guest}")
-    private String rabbitUsername;
-    
-    @Value("${spring.rabbitmq.password:guest}")
-    private String rabbitPassword;
-    
-    @Value("${spring.rabbitmq.virtual-host:/}")
-    private String rabbitVirtualHost;
-
     @Autowired(required = false)
     private JwtUtils jwtUtils;
 
