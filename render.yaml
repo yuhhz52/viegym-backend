@@ -26,21 +26,21 @@ services:
         sync: false
       - key: CLOUDINARY_API_KEY
         sync: false
-        - key: CLOUDINARY_API_SECRET
-          sync: false
-        - key: RABBITMQ_HOST
-          sync: false
-        - key: RABBITMQ_PORT
-          value: 5671
-        - key: RABBITMQ_USERNAME
-          sync: false
-        - key: RABBITMQ_PASSWORD
-          sync: false
-        - key: RABBITMQ_VHOST
-          sync: false
-        - key: RABBITMQ_SSL
-          value: true
-        - key: MAIL_USERNAME
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: RABBITMQ_HOST
+        sync: false
+      - key: RABBITMQ_PORT
+        value: 5671
+      - key: RABBITMQ_USERNAME
+        sync: false
+      - key: RABBITMQ_PASSWORD
+        sync: false
+      - key: RABBITMQ_VHOST
+        sync: false
+      - key: RABBITMQ_SSL
+        value: true
+      - key: MAIL_USERNAME
         sync: false
       - key: MAIL_PASSWORD
         sync: false

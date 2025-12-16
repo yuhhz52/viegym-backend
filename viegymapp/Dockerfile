@@ -26,19 +26,22 @@ RUN chown spring:spring app.jar
 # Switch to non-root user
 USER spring:spring
 
-# Expose port
-EXPOSE 8080
+# Expose port - Use PORT env var or default to 10000
+EXPOSE ${PORT:-10000}
 
-# Health check - Use PORT env var or default to 8080
-HEALTHCHECK --interval=30s --timeout=3s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost:${PORT:-8080}/actuator/health || exit 1
+# Health check - Use PORT env var or default to 10000
+HEALTHCHECK --interval=30s --timeout=5s --start-period=120s --retries=5 \
+    CMD curl -f http://localhost:${PORT:-10000}/actuator/health || exit 1
 
-# JVM tuning for container environments
+# JVM tuning for container environments with faster startup
 ENTRYPOINT ["java", \
     "-XX:+UseContainerSupport", \
     "-XX:MaxRAMPercentage=75.0", \
     "-XX:InitialRAMPercentage=50.0", \
     "-XX:+ExitOnOutOfMemoryError", \
+    "-XX:+TieredCompilation", \
+    "-XX:TieredStopAtLevel=1", \
     "-Djava.security.egd=file:/dev/./urandom", \
+    "-Dspring.jmx.enabled=false", \
     "-jar", \
     "app.jar"]

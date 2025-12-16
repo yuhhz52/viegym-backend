@@ -1,3 +1,6 @@
+server:
+  port: ${PORT:10000}
+  
 spring:
   datasource:
     hikari:
@@ -19,6 +22,10 @@ spring:
           time_zone: Asia/Ho_Chi_Minh
         cache:
           use_second_level_cache: false
+        temp:
+          use_jdbc_metadata_defaults: false
+    open-in-view: false
+    defer-datasource-initialization: false
   
   servlet:
     multipart:
@@ -44,6 +51,7 @@ spring:
     port: 587
     username: ${MAIL_USERNAME}
     password: ${MAIL_PASSWORD}
+    test-connection: false
     properties:
       mail:
         smtp:
@@ -64,6 +72,8 @@ spring:
     ssl:
       enabled: ${RABBITMQ_SSL:true}
       algorithm: TLSv1.2
+    connection-timeout: 10000
+    requested-heartbeat: 30
 
   # Redis - Currently not used in the application
   # Uncomment if you need caching in the future
