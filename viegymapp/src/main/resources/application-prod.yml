@@ -40,14 +40,12 @@ spring:
   
   rabbitmq:
     host: ${RABBITMQ_HOST}
-    port: ${RABBITMQ_PORT:5672}
+    port: ${RABBITMQ_PORT:5671}
     username: ${RABBITMQ_USERNAME}
     password: ${RABBITMQ_PASSWORD}
     virtual-host: ${RABBITMQ_VHOST:/}
-    stomp:
-      port: ${RABBITMQ_STOMP_PORT:61613}
     ssl:
-      enabled: true
+      enabled: ${RABBITMQ_SSL:true}
       algorithm: TLSv1.2
     listener:
       simple:
