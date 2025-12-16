@@ -38,18 +38,6 @@ spring:
               - email
               - profile
   
-  rabbitmq:
-    host: ${RABBITMQ_HOST}
-    port: ${RABBITMQ_PORT:5671}
-    username: ${RABBITMQ_USERNAME}
-    password: ${RABBITMQ_PASSWORD}
-    virtual-host: ${RABBITMQ_VHOST:/}
-    ssl:
-      enabled: ${RABBITMQ_SSL:true}
-      algorithm: TLSv1.2
-    listener:
-      simple:
-        auto-startup: false
   
   mail:
     host: smtp.gmail.com
@@ -66,6 +54,16 @@ spring:
           connectiontimeout: 5000
           timeout: 5000
           writetimeout: 5000
+
+  rabbitmq:
+    host: ${RABBITMQ_HOST}
+    port: ${RABBITMQ_PORT:5671}
+    username: ${RABBITMQ_USERNAME}
+    password: ${RABBITMQ_PASSWORD}
+    virtual-host: ${RABBITMQ_VHOST:/}
+    ssl:
+      enabled: ${RABBITMQ_SSL:true}
+      algorithm: TLSv1.2
 
   data:
     redis:
@@ -110,7 +108,7 @@ management:
     mail:
       enabled: false  # Disable mail health check to prevent timeout issues
     rabbit:
-      enabled: false  # Disable RabbitMQ health check (listeners disabled)
+      enabled: true   # Enable RabbitMQ health check
 
 # Logging configuration for production
 logging:

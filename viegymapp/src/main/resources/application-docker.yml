@@ -39,3 +39,4 @@ viegym:
     jwtRefreshExpirationMs: 604800000
     cookieSecure: true  # Bật secure cookie trong production (HTTPS)
     frontendUrl: "http://localhost:5173"  # Cập nhật theo domain thực tế khi deploy
+    mobileAuthUrl: ${MOBILE_AUTH_URL:http://localhost:8080}  # URL for mobile OAuth redirect
