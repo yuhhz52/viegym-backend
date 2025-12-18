@@ -262,10 +262,18 @@ public class ExerciseServiceImpl implements ExerciseService {
 
     @Override
     public void deleteExercise(UUID id) {
-        if (!exerciseRepository.existsById(id)) {
-            throw new AppException(ErrorCode.EXERCISE_NOT_FOUND);
+        // Check if exercise exists before attempting to delete
+        Exercise exercise = exerciseRepository.findById(id)
+                .orElse(null);
+        
+        if (exercise == null) {
+            // Exercise doesn't exist - return silently (idempotent operation)
+            // The desired state (exercise deleted) is already achieved
+            return;
         }
-        exerciseRepository.deleteById(id);
+        
+        // Delete the exercise - cascade will handle related records
+        exerciseRepository.delete(exercise);
     }
 
     @Override

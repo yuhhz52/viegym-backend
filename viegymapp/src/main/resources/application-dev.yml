@@ -65,8 +65,8 @@ viegym:
     jwtSecret: "1c4e9676c4fb52381bac0b849320e2fbd92ef2e3ccf42c8938900d51598d91f7"
     jwtExpirationMs: 604800000
     jwtRefreshExpirationMs: 604800000
-    cookieSecure: true
-    frontendUrl: ${FRONTEND_URL}
+    cookieSecure: false  # false cho local (HTTP), true cho production (HTTPS)
+    frontendUrl: ${FRONTEND_URL:http://localhost:5173}
     mobileAuthUrl: "https://unliberalized-hedgiest-martina.ngrok-free.dev"
 
 cloudinary:

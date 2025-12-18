@@ -2,8 +2,10 @@ package com.example.viegymapp.controller;
 
 import com.example.viegymapp.dto.request.AddClientRequest;
 import com.example.viegymapp.dto.request.AssignProgramRequest;
+import com.example.viegymapp.dto.request.WithdrawRequest;
 import com.example.viegymapp.dto.response.ApiResponse;
 import com.example.viegymapp.dto.response.ClientResponse;
+import com.example.viegymapp.dto.response.CoachBalanceResponse;
 import com.example.viegymapp.dto.response.CoachStatsResponse;
 import com.example.viegymapp.dto.response.WorkoutProgramResponse;
 import com.example.viegymapp.service.CoachService;
@@ -22,7 +24,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("api/coach")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('COACH')")
+@PreAuthorize("hasRole('ROLE_COACH')")
 public class CoachController {
 
     private final CoachService coachService;
@@ -138,6 +140,43 @@ public class CoachController {
     public ApiResponse<List<WorkoutProgramResponse>> getClientPrograms(@PathVariable UUID clientId) {
         return ApiResponse.<List<WorkoutProgramResponse>>builder()
                 .result(coachService.getClientPrograms(clientId))
+                .build();
+    }
+
+    /**
+     * Get coach's balance information
+     * GET /api/coach/balance
+     */
+    @GetMapping("/balance")
+    public ApiResponse<CoachBalanceResponse> getCoachBalance() {
+        return ApiResponse.<CoachBalanceResponse>builder()
+                .result(coachService.getCoachBalance())
+                .build();
+    }
+
+    /**
+     * Request withdrawal
+     * POST /api/coach/withdraw
+     */
+    @PostMapping("/withdraw")
+    public ApiResponse<CoachBalanceResponse> withdraw(@Valid @RequestBody WithdrawRequest request) {
+        return ApiResponse.<CoachBalanceResponse>builder()
+                .result(coachService.withdraw(request))
+                .message("Yêu cầu rút tiền đã được gửi thành công")
+                .build();
+    }
+
+    /**
+     * Process all completed bookings that still have pending transactions
+     * This is a recovery endpoint to fix bookings that were completed before the fix
+     * POST /api/coach/process-pending-bookings
+     */
+    @PostMapping("/process-pending-bookings")
+    public ApiResponse<Integer> processPendingCompletedBookings() {
+        int processedCount = coachService.processPendingCompletedBookings();
+        return ApiResponse.<Integer>builder()
+                .result(processedCount)
+                .message("Đã xử lý " + processedCount + " booking(s) có giao dịch đang chờ")
                 .build();
     }
 }

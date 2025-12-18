@@ -64,10 +64,10 @@ public class Exercise extends BaseEntity{
     @OneToMany(mappedBy = "exercise", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ExerciseMedia> mediaList;
 
-    @OneToMany(mappedBy = "exercise")
+    @OneToMany(mappedBy = "exercise", cascade = CascadeType.REMOVE, orphanRemoval = true)
     private Set<ProgramExercise> programExercises = new HashSet<>();
 
-    @OneToMany(mappedBy = "exercise")
+    @OneToMany(mappedBy = "exercise", cascade = CascadeType.REMOVE, orphanRemoval = true)
     private Set<SessionExerciseLog> sessionLogs = new HashSet<>();
 
 

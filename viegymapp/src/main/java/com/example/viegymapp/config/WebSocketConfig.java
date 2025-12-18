@@ -5,7 +5,6 @@ import com.example.viegymapp.service.Impl.UserDetailsServiceImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -68,12 +67,17 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                     StompCommand command = accessor.getCommand();
                     
                     // Handle CONNECT command - authentication
-                    if (StompCommand.CONNECT.equals(command) && jwtUtils != null && userDetailsService != null) {
+                    if (StompCommand.CONNECT.equals(command)) {
+                        if (jwtUtils == null || userDetailsService == null) {
+                            logger.debug("WebSocket CONNECT: JWT utils or user service not available, allowing connection");
+                            return message;
+                        }
+                        
                         // Extract token from headers
                         String token = null;
+                        String authHeader = accessor.getFirstNativeHeader("Authorization");
                         
                         // Try to get token from Authorization header
-                        String authHeader = accessor.getFirstNativeHeader("Authorization");
                         if (authHeader != null && authHeader.startsWith("Bearer ")) {
                             token = authHeader.substring(7);
                         }
@@ -95,32 +99,52 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                         }
                         
                         // Validate token and set authentication
-                        if (token != null && !token.isEmpty() && jwtUtils.validateJwtToken(token)) {
-                            try {
-                                String username = jwtUtils.getUserNameFromJwtToken(token);
-                                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-                                
-                                UsernamePasswordAuthenticationToken authentication = 
-                                    new UsernamePasswordAuthenticationToken(
-                                        userDetails, 
-                                        null, 
-                                        userDetails.getAuthorities()
-                                    );
-                                
-                                accessor.setUser(authentication);
-                                logger.debug("WebSocket authentication successful for user: {}", username);
-                            } catch (Exception e) {
-                                logger.error("WebSocket authentication failed: {}", e.getMessage());
-                                // If authentication fails, the connection will be rejected
+                        if (token != null && !token.isEmpty()) {
+                            if (jwtUtils.validateJwtToken(token)) {
+                                try {
+                                    String username = jwtUtils.getUserNameFromJwtToken(token);
+                                    UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+                                    
+                                    UsernamePasswordAuthenticationToken authentication = 
+                                        new UsernamePasswordAuthenticationToken(
+                                            userDetails, 
+                                            null, 
+                                            userDetails.getAuthorities()
+                                        );
+                                    
+                                    accessor.setUser(authentication);
+                                    logger.debug("WebSocket authentication successful for user: {}", username);
+                                } catch (Exception e) {
+                                    logger.warn("WebSocket authentication failed for token: {} - Error: {}", 
+                                            token.substring(0, Math.min(20, token.length())) + "...", e.getMessage());
+                                    // Connection will continue but without authentication
+                                }
+                            } else {
+                                // Token exists but is invalid (expired, malformed, etc.)
+                                logger.debug("WebSocket connection with invalid token (expired or malformed)");
+                                // Allow connection but it will be unauthenticated
                             }
                         } else {
-                            logger.warn("WebSocket connection attempt without valid token");
+                            // No token provided - this is normal for:
+                            // - Health checks
+                            // - Retry attempts
+                            // - Clients not yet authenticated
+                            logger.debug("WebSocket connection attempt without token (anonymous connection)");
+                            // Allow connection but it will be unauthenticated
                         }
                     }
                     
-                    // Handle SUBSCRIBE command - fix destination prefix
+                    // Handle SUBSCRIBE command - fix destination prefix and check authentication
                     if (StompCommand.SUBSCRIBE.equals(command)) {
                         String destination = accessor.getDestination();
+                        
+                        // Check if user is authenticated for protected destinations
+                        if (accessor.getUser() == null) {
+                            // User is not authenticated - only allow public topics if any
+                            // For now, we'll allow subscription but the actual message sending will be protected
+                            logger.debug("WebSocket SUBSCRIBE to {} without authentication", destination);
+                        }
+                        
                         if (destination != null && !destination.startsWith("/topic/") && !destination.startsWith("/queue/") && !destination.startsWith("/user/")) {
                             // Fix destinations that are missing /topic prefix
                             // Common patterns: /chat/, /notifications/, /likes/, etc.
@@ -130,10 +154,10 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                                 destination.startsWith("/comments/")) {
                                 String correctedDestination = "/topic" + destination;
                                 accessor.setDestination(correctedDestination);
-                                logger.info("Fixed subscription destination: {} -> {}", destination, correctedDestination);
+                                logger.debug("Fixed subscription destination: {} -> {}", destination, correctedDestination);
                             } else {
                                 // Log unexpected destination format for debugging
-                                logger.warn("Subscription to unexpected destination format: {}", destination);
+                                logger.debug("Subscription to unexpected destination format: {}", destination);
                             }
                         }
                     }

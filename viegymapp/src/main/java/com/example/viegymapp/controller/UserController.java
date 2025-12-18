@@ -203,4 +203,18 @@ public class UserController {
                 .build();
     }
 
+    // ============ COACHES ============
+
+    /**
+     * Lấy danh sách tất cả coaches (public endpoint)
+     * GET /api/user/coaches
+     */
+    @GetMapping("/coaches")
+    @PreAuthorize("permitAll()")
+    public ApiResponse<java.util.List<UserResponse>> getAllCoaches() {
+        return ApiResponse.<java.util.List<UserResponse>>builder()
+                .result(userService.getAllCoaches())
+                .build();
+    }
+
 }

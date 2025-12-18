@@ -16,13 +16,16 @@ public class CorsConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOriginPatterns(Arrays.asList(
-            "http://localhost:5173",  // Web frontend local
-            "http://localhost:8081",  // Expo web/mobile
-            "http://localhost:8082",  // Expo alternate port
-            "http://192.168.*.*:*",   // Local network (for mobile devices)
-            "https://*.ngrok-free.dev", // Ngrok tunnel
-            "https://viegym.netlify.app",
-            "https://*.onrender.com"  // Render backend
+            "http://localhost:5173",  
+            "http://localhost:3000",  
+            "http://localhost:8081",  
+            "http://localhost:8082",  
+            "http://192.168.*.*:*",  
+            "https://*.ngrok-free.dev", 
+            "https://viegym.netlify.app",  
+            "https://*.netlify.app",  
+            "https://*.onrender.com", 
+            "https://viegym-backend.onrender.com"  
         ));
 
         // Cho phép gửi cookie & header xác thực

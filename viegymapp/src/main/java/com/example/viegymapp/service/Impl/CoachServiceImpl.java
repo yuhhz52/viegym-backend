@@ -2,7 +2,9 @@ package com.example.viegymapp.service.Impl;
 
 import com.example.viegymapp.dto.request.AddClientRequest;
 import com.example.viegymapp.dto.request.AssignProgramRequest;
+import com.example.viegymapp.dto.request.WithdrawRequest;
 import com.example.viegymapp.dto.response.ClientResponse;
+import com.example.viegymapp.dto.response.CoachBalanceResponse;
 import com.example.viegymapp.dto.response.CoachStatsResponse;
 import com.example.viegymapp.dto.response.WorkoutProgramResponse;
 import com.example.viegymapp.entity.*;
@@ -17,7 +19,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
@@ -36,6 +40,9 @@ public class CoachServiceImpl implements CoachService {
     private final WorkoutSessionRepository workoutSessionRepository;
     private final WorkoutProgramMapper workoutProgramMapper;
     private final BookingSessionRepository bookingRepository;
+    private final com.example.viegymapp.repository.CoachBalanceRepository coachBalanceRepository;
+    private final com.example.viegymapp.repository.CoachTransactionRepository coachTransactionRepository;
+    private final com.example.viegymapp.service.CoachBalanceService coachBalanceService;
 
     /**
      * Get current coach from security context
@@ -45,11 +52,19 @@ public class CoachServiceImpl implements CoachService {
         User coach = userRepository.findByEmail(email)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
         
+        // Log user roles for debugging
+        log.debug("User {} has roles: {}", email, coach.getUserRoles().stream()
+                .map(ur -> ur.getRole().getName().name())
+                .collect(java.util.stream.Collectors.toList()));
+        
         // Verify user is a coach
         boolean isCoach = coach.getUserRoles().stream()
-                .anyMatch(ur -> ur.getRole().getName().name().equals("COACH"));
+                .anyMatch(ur -> ur.getRole().getName() == com.example.viegymapp.entity.Enum.PredefinedRole.ROLE_COACH);
         
         if (!isCoach) {
+            log.warn("User {} does not have ROLE_COACH. Current roles: {}", email, coach.getUserRoles().stream()
+                    .map(ur -> ur.getRole().getName().name())
+                    .collect(java.util.stream.Collectors.toList()));
             throw new AppException(ErrorCode.UNAUTHORIZED);
         }
         
@@ -275,5 +290,93 @@ public class CoachServiceImpl implements CoachService {
                 .status(coachClient.getStatus())
                 .notes(coachClient.getNotes())
                 .build();
+    }
+
+    @Override
+    public CoachBalanceResponse getCoachBalance() {
+        User coach = getCurrentCoach();
+        
+        // Initialize balance if not exists
+        coachBalanceService.initializeCoachBalance(coach.getId());
+        
+        com.example.viegymapp.entity.CoachBalance balance = coachBalanceRepository.findByCoachId(coach.getId())
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        
+        return CoachBalanceResponse.builder()
+                .availableBalance(balance.getAvailableBalance())
+                .pendingBalance(balance.getPendingBalance())
+                .totalEarned(balance.getTotalEarned())
+                .totalWithdrawn(balance.getTotalWithdrawn())
+                .bankAccountInfo(balance.getBankAccountInfo())
+                .lastUpdated(balance.getLastUpdated())
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public CoachBalanceResponse withdraw(WithdrawRequest request) {
+        User coach = getCurrentCoach();
+        
+        // Initialize balance if not exists
+        coachBalanceService.initializeCoachBalance(coach.getId());
+        
+        com.example.viegymapp.entity.CoachBalance balance = coachBalanceRepository.findByCoachId(coach.getId())
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        
+        // Validate withdrawal amount
+        if (request.getAmount().compareTo(balance.getAvailableBalance()) > 0) {
+            throw new AppException(ErrorCode.VALIDATION_FAILED);
+        }
+        
+        // Minimum withdrawal amount
+        if (request.getAmount().compareTo(new java.math.BigDecimal("50000")) < 0) {
+            throw new AppException(ErrorCode.VALIDATION_FAILED);
+        }
+        
+        // Record balance before withdrawal
+        BigDecimal balanceBefore = balance.getAvailableBalance();
+        
+        // Deduct from available balance
+        balance.setAvailableBalance(balance.getAvailableBalance().subtract(request.getAmount()));
+        balance.setTotalWithdrawn(balance.getTotalWithdrawn().add(request.getAmount()));
+        balance.setBankAccountInfo(request.getBankAccountInfo());
+        balance.setLastUpdated(java.time.LocalDateTime.now());
+        
+        coachBalanceRepository.save(balance);
+        
+        // Create withdrawal transaction record
+        CoachTransaction withdrawalTransaction = CoachTransaction.builder()
+                .coach(coach)
+                .type(CoachTransaction.TransactionType.WITHDRAWAL)
+                .amount(request.getAmount())
+                .platformFee(java.math.BigDecimal.ZERO) // No platform fee for withdrawal
+                .netAmount(request.getAmount().negate()) // Negative because it's a withdrawal
+                .balanceBefore(balanceBefore)
+                .balanceAfter(balance.getAvailableBalance())
+                .status(CoachTransaction.TransactionStatus.PENDING) // PENDING until processed by admin
+                .description(String.format("Yêu cầu rút tiền - %s", request.getBankAccountInfo()))
+                .processedAt(java.time.LocalDateTime.now())
+                .build();
+        
+        coachTransactionRepository.save(withdrawalTransaction);
+        
+        log.info("Coach {} withdrew {} VNĐ. New balance: {}. Transaction ID: {}", 
+                coach.getId(), request.getAmount(), balance.getAvailableBalance(), withdrawalTransaction.getId());
+        
+        return CoachBalanceResponse.builder()
+                .availableBalance(balance.getAvailableBalance())
+                .pendingBalance(balance.getPendingBalance())
+                .totalEarned(balance.getTotalEarned())
+                .totalWithdrawn(balance.getTotalWithdrawn())
+                .bankAccountInfo(balance.getBankAccountInfo())
+                .lastUpdated(balance.getLastUpdated())
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public int processPendingCompletedBookings() {
+        User coach = getCurrentCoach();
+        return coachBalanceService.processPendingCompletedBookings(coach.getId());
     }
 }

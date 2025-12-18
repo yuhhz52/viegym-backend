@@ -25,7 +25,7 @@ public class WorkoutSessionController {
     private SessionExerciseLogService logService;
 
     @PostMapping("/sessions")
-    @PreAuthorize("hasAnyRole('USER','ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('USER','COACH','ADMIN','SUPER_ADMIN')")
     public ApiResponse<WorkoutSessionResponse> createSession(@RequestBody WorkoutSessionRequest req) {
         return ApiResponse.<WorkoutSessionResponse>builder()
                 .result(sessionService.createSession(req))
@@ -33,7 +33,7 @@ public class WorkoutSessionController {
     }
 
     @GetMapping("/sessions")
-    @PreAuthorize("hasAnyRole('USER','ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('USER','COACH','ADMIN','SUPER_ADMIN')")
     public ApiResponse<List<WorkoutSessionResponse>> getAllSession() {
         return ApiResponse.<List<WorkoutSessionResponse>>builder()
                 .result(sessionService.getAllSession())
@@ -41,7 +41,7 @@ public class WorkoutSessionController {
     }
 
     @GetMapping("/sessions/{id}")
-    @PreAuthorize("hasAnyRole('USER','ADMIN','SUPER_ADMIN') and @workoutSessionServiceImpl.isSessionOwner(#id, authentication.name)")
+    @PreAuthorize("hasAnyRole('USER','COACH','ADMIN','SUPER_ADMIN') and @workoutSessionServiceImpl.isSessionOwner(#id, authentication.name)")
     public ApiResponse<WorkoutSessionResponse> getSessionById(@PathVariable UUID id) {
         return ApiResponse.<WorkoutSessionResponse>builder()
                 .result(sessionService.getSessionById(id))
@@ -60,7 +60,7 @@ public class WorkoutSessionController {
 
     // --- Xóa session ---
     @DeleteMapping("/sessions/{id}")
-    @PreAuthorize("hasAnyRole('USER','ADMIN', 'SUPER_ADMIN') and (@workoutSessionServiceImpl.isSessionOwner(#id, authentication.name) or hasAnyRole('ADMIN', 'SUPER_ADMIN'))")
+    @PreAuthorize("hasAnyRole('USER','COACH','ADMIN', 'SUPER_ADMIN') and (@workoutSessionServiceImpl.isSessionOwner(#id, authentication.name) or hasAnyRole('ADMIN', 'SUPER_ADMIN'))")
     public ApiResponse<UUID> delete(@PathVariable UUID id) {
         sessionService.deleteSession(id);
         return ApiResponse.<UUID>builder()
@@ -70,7 +70,7 @@ public class WorkoutSessionController {
 
     // --- Logs ---
     @GetMapping("/sessions/{sessionId}/logs")
-    @PreAuthorize("hasAnyRole('USER','ADMIN','SUPER_ADMIN') and @workoutSessionServiceImpl.isSessionOwner(#sessionId, authentication.name)")
+    @PreAuthorize("hasAnyRole('USER','COACH','ADMIN','SUPER_ADMIN') and @workoutSessionServiceImpl.isSessionOwner(#sessionId, authentication.name)")
     public ApiResponse<List<SessionExerciseLogResponse>> getLogsBySession(@PathVariable UUID sessionId) {
         return ApiResponse.<List<SessionExerciseLogResponse>>builder()
                 .result(logService.getLogBySessionId(sessionId))
@@ -78,7 +78,7 @@ public class WorkoutSessionController {
     }
 
     @PostMapping("/sessions/{sessionId}/logs")
-    @PreAuthorize("hasAnyRole('USER','ADMIN','SUPER_ADMIN') and @workoutSessionServiceImpl.isSessionOwner(#sessionId, authentication.name)")
+    @PreAuthorize("hasAnyRole('USER','COACH','ADMIN','SUPER_ADMIN') and @workoutSessionServiceImpl.isSessionOwner(#sessionId, authentication.name)")
     public ApiResponse<SessionExerciseLogResponse> createLog(@PathVariable UUID sessionId,
                                                              @Valid @RequestBody SessionExerciseLogRequest request) {
         request.setSessionId(sessionId);
@@ -88,7 +88,7 @@ public class WorkoutSessionController {
     }
 
     @PutMapping("/logs/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN') or @logService.isLogOwner(#id, authentication.name)")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN') or @sessionExerciseLogServiceImpl.isLogOwner(#id, authentication.name)")
     public ApiResponse<SessionExerciseLogResponse> updateLog(@PathVariable UUID id,
                                                              @Valid @RequestBody SessionExerciseLogRequest request) {
         return ApiResponse.<SessionExerciseLogResponse>builder()
@@ -97,7 +97,7 @@ public class WorkoutSessionController {
     }
 
     @DeleteMapping("/logs/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN') or @logService.isLogOwner(#id, authentication.name)")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN') or @sessionExerciseLogServiceImpl.isLogOwner(#id, authentication.name)")
     public ApiResponse<UUID> deleteLog(@PathVariable UUID id) {
         logService.deleteLog(id);
         return ApiResponse.<UUID>builder()
@@ -108,7 +108,7 @@ public class WorkoutSessionController {
     // ============ TEST ENDPOINT ============
     // Create workout session for today (for testing streak calculation)
     @PostMapping("/sessions/test/today")
-    @PreAuthorize("hasAnyRole('USER','ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('USER','COACH','ADMIN','SUPER_ADMIN')")
     public ApiResponse<WorkoutSessionResponse> createTestSessionToday() {
         WorkoutSessionRequest req = new WorkoutSessionRequest();
         req.setSessionDate(Instant.now()); // Hôm nay

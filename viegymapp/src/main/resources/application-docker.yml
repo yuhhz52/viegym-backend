@@ -7,6 +7,29 @@ spring:
     redis:
       host: redis
       port: 6379
+  rabbitmq:
+    host: rabbitmq
+    port: 5672
+    username: admin
+    password: admin123
+    virtual-host: /
+    connection-timeout: 10000
+    requested-heartbeat: 30
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
   jpa:
     hibernate:
       ddl-auto: update
@@ -18,6 +41,9 @@ spring:
         jdbc:
           time_zone: Asia/Ho_Chi_Minh
 
+  # OAuth2 Google - Same as dev config
+  # Credentials from environment variables (set in .env or docker-compose.yml)
+  # Authorized redirect URI: http://localhost:8080/login/oauth2/code/google
   security:
     oauth2:
       client:
@@ -37,6 +63,32 @@ viegym:
     jwtSecret: "1c4e9676c4fb52381bac0b849320e2fbd92ef2e3ccf42c8938900d51598d91f7"
     jwtExpirationMs: 604800000
     jwtRefreshExpirationMs: 604800000
-    cookieSecure: true  # Bật secure cookie trong production (HTTPS)
-    frontendUrl: "http://localhost:5173"  # Cập nhật theo domain thực tế khi deploy
+    cookieSecure: false  # Tắt secure cookie trong Docker (HTTP)
+    frontendUrl: "http://localhost:3000"  # Frontend URL trong Docker
     mobileAuthUrl: ${MOBILE_AUTH_URL:http://localhost:8080}  # URL for mobile OAuth redirect
+
+# Cloudinary configuration - Optional, set environment variables to enable
+cloudinary:
+  cloud-name: ${CLOUDINARY_CLOUD_NAME:}
+  api-key: ${CLOUDINARY_API_KEY:}
+  api-secret: ${CLOUDINARY_API_SECRET:}
+
+app:
+  super-admin:
+    email: ${SUPER_ADMIN_EMAIL:huyadmin@gmail.com}
+
+# Actuator endpoints for monitoring and health checks
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+  health:
+    mail:
+      enabled: false  # Disable mail health check in Docker (optional)
+    rabbit:
+      enabled: true   # Enable RabbitMQ health check

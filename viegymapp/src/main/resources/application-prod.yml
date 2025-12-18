@@ -104,21 +104,26 @@ app:
     email: ${SUPER_ADMIN_EMAIL}
     password: ${SUPER_ADMIN_PASSWORD}
 
+# Debug configuration (set to true to enable debug endpoints
+  debug:
+    enabled: ${DEBUG_ENABLED:false}
+
 # Actuator endpoints for monitoring
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,rabbitmq
       base-path: /actuator
   endpoint:
     health:
-      show-details: when-authorized
+      show-details: always
+      show-components: always
   health:
     defaults:
       enabled: true
     mail:
-      enabled: false  
+      enabled: true  # Enable mail health check
     rabbit:
       enabled: true   # Enable RabbitMQ health check
     redis:
@@ -129,6 +134,7 @@ logging:
   level:
     root: INFO
     com.example.viegymapp: INFO
+    com.example.viegymapp.config.WebSocketConfig: DEBUG  # Set to WARN to reduce WebSocket logs
     org.springframework.web: WARN
     org.hibernate: WARN
   pattern:

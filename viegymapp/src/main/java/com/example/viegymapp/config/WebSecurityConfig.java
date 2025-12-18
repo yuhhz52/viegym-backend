@@ -30,13 +30,13 @@ public class WebSecurityConfig {
     @Autowired
     private UserDetailsServiceImpl userDetailsService;
 
-    @Autowired
+    @Autowired(required = false)
     private CustomOAuth2UserService customOAuth2UserService;
 
-    @Autowired
+    @Autowired(required = false)
     private OAuth2SuccessHandler auth2SuccessHandler;
 
-    @Autowired
+    @Autowired(required = false)
     private OAuth2FailureHandler auth2FailureHandler;
 
     @Autowired
@@ -51,7 +51,7 @@ public class WebSecurityConfig {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    @Autowired
+    @Autowired(required = false)
     private ClientRegistrationRepository clientRegistrationRepository;
 
     @Bean
@@ -78,8 +78,10 @@ public class WebSecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/test/**").permitAll()
+                        .requestMatchers("/api/debug/**").permitAll() // Debug endpoints (conditionally enabled)
                         .requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/refresh", 
                                         "/api/auth/forgot-password", "/api/auth/reset-password").permitAll()
+                        .requestMatchers("/api/auth/ws-token").authenticated() // ws-token cần authentication (đọc từ cookie)
                         .requestMatchers("/api/auth/logout").authenticated() // Yêu cầu authentication để logout
                         .requestMatchers("/api/exercises/**").permitAll()
                         .requestMatchers("/api/workouts/**").authenticated()
@@ -89,20 +91,27 @@ public class WebSecurityConfig {
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/", "/actuator/**", "/health", "/ws/**", "/ping").permitAll()
                         .anyRequest().authenticated()
-                )
-                .oauth2Login(oauth2 -> oauth2
-                        .authorizationEndpoint(authorization -> authorization
-                                .authorizationRequestResolver(
-                                        new CustomOAuth2AuthorizationRequestResolver(
-                                                clientRegistrationRepository,
-                                                "/oauth2/authorization"
-                                        )
-                                )
-                        )
-                        .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
-                        .successHandler(auth2SuccessHandler)
-                        .failureHandler(auth2FailureHandler)
                 );
+        
+        // Only configure OAuth2 if ClientRegistrationRepository and required beans are available
+        if (clientRegistrationRepository != null && 
+            customOAuth2UserService != null && 
+            auth2SuccessHandler != null && 
+            auth2FailureHandler != null) {
+            http.oauth2Login(oauth2 -> oauth2
+                    .authorizationEndpoint(authorization -> authorization
+                            .authorizationRequestResolver(
+                                    new CustomOAuth2AuthorizationRequestResolver(
+                                            clientRegistrationRepository,
+                                            "/oauth2/authorization"
+                                    )
+                            )
+                    )
+                    .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
+                    .successHandler(auth2SuccessHandler)
+                    .failureHandler(auth2FailureHandler)
+            );
+        }
 
         http.authenticationProvider(authenticationProvider());
         http.addFilterBefore(authTokenFilter, UsernamePasswordAuthenticationFilter.class);

@@ -65,9 +65,18 @@ public class AuthTokenFilter extends OncePerRequestFilter {
         // First try to get JWT from Authorization header (for mobile/SPA clients)
         String jwt = jwtUtils.getJwtFromHeader(request);
         
+        if (jwt != null && !jwt.isEmpty()) {
+            logger.debug("[AuthTokenFilter] Token found in Authorization header");
+            return jwt;
+        }
+        
         // If not found in header, try cookies (for web clients)
-        if (jwt == null || jwt.isEmpty()) {
-            jwt = jwtUtils.getJwtFromCookies(request);
+        jwt = jwtUtils.getJwtFromCookies(request);
+        
+        if (jwt != null && !jwt.isEmpty()) {
+            logger.debug("[AuthTokenFilter] Token found in cookie");
+        } else {
+            logger.debug("[AuthTokenFilter] No token found in header or cookie for path: {}", request.getRequestURI());
         }
         
         return jwt;

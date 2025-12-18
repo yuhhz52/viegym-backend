@@ -20,18 +20,32 @@ public class CloudinaryService {
     private final Cloudinary cloudinary;
 
     public CloudinaryService(
-            @Value("${cloudinary.cloud-name}") String cloudName,
-            @Value("${cloudinary.api-key}") String apiKey,
-            @Value("${cloudinary.api-secret}") String apiSecret
+            @Value("${cloudinary.cloud-name:}") String cloudName,
+            @Value("${cloudinary.api-key:}") String apiKey,
+            @Value("${cloudinary.api-secret:}") String apiSecret
     ) {
-        this.cloudinary = new Cloudinary(ObjectUtils.asMap(
-                "cloud_name", cloudName,
-                "api_key", apiKey,
-                "api_secret", apiSecret
-        ));
+        // Only initialize Cloudinary if credentials are provided
+        if (cloudName != null && !cloudName.isEmpty() && 
+            apiKey != null && !apiKey.isEmpty() && 
+            apiSecret != null && !apiSecret.isEmpty()) {
+            this.cloudinary = new Cloudinary(ObjectUtils.asMap(
+                    "cloud_name", cloudName,
+                    "api_key", apiKey,
+                    "api_secret", apiSecret
+            ));
+            log.info("Cloudinary service initialized successfully");
+        } else {
+            this.cloudinary = null;
+            log.warn("Cloudinary credentials not provided. File upload functionality will be disabled.");
+        }
     }
 
     public String uploadFile(MultipartFile file) throws IOException {
+        if (cloudinary == null) {
+            log.error("Cloudinary is not configured. Cannot upload file.");
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+        }
+        
         try {
             @SuppressWarnings("unchecked")
             Map<String, Object> uploadResult = cloudinary.uploader().upload(

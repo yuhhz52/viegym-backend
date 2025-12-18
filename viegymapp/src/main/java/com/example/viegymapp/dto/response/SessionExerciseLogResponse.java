@@ -21,6 +21,7 @@ public class SessionExerciseLogResponse {
     private Double distanceMeters;
     private Double bodyWeight;
     private String setNotes;
+    private Boolean completed;
     
     // Computed fields
     private Double volume;

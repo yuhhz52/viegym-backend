@@ -51,4 +51,10 @@ public interface CoachBalanceService {
      * Initialize balance for a new coach
      */
     void initializeCoachBalance(UUID coachId);
+    
+    /**
+     * Process all completed bookings that still have pending transactions
+     * This is a recovery method to fix bookings that were completed before the fix
+     */
+    int processPendingCompletedBookings(UUID coachId);
 }

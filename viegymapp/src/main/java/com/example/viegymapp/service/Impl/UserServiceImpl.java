@@ -449,4 +449,13 @@ public class UserServiceImpl implements UserService {
         user.setStatus(status);
         return userMapper.toUserResponse(userRepository.save(user));
     }
+
+    // ============ GET ALL COACHES ============
+    @Override
+    public java.util.List<UserResponse> getAllCoaches() {
+        java.util.List<User> coaches = userRepository.findByRoleName(PredefinedRole.ROLE_COACH);
+        return coaches.stream()
+                .map(userMapper::toUserResponse)
+                .collect(java.util.stream.Collectors.toList());
+    }
 }

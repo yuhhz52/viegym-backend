@@ -60,4 +60,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     @Modifying
     @Query("UPDATE User u SET u.streakDays = :streak WHERE u.id = :userId")
     void updateStreak(@Param("userId") Long userId, @Param("streak") Integer streakDays);
+
+    // Get all users with COACH role
+    @Query("SELECT DISTINCT u FROM User u JOIN u.userRoles ur JOIN ur.role r WHERE r.name = :roleName AND u.status != 'DELETED'")
+    java.util.List<User> findByRoleName(@Param("roleName") PredefinedRole roleName);
 }

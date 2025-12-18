@@ -1,0 +1,17 @@
+target/
+.mvn/
+mvnw
+mvnw.cmd
+*.md
+.git/
+.gitignore
+.idea/
+*.iml
+.vscode/
+*.log
+*.class
+.DS_Store
+*.swp
+*.swo
+*~
+

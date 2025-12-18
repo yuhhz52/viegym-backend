@@ -29,9 +29,14 @@ USER spring:spring
 # Expose port - Use PORT env var or default to 10000
 EXPOSE ${PORT:-10000}
 
-# Health check - Use PORT env var or default to 10000
+# Install curl for health check
+USER root
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+USER spring:spring
+
+# Health check - Use PORT env var or default to 8080
 HEALTHCHECK --interval=30s --timeout=5s --start-period=120s --retries=5 \
-    CMD curl -f http://localhost:${PORT:-10000}/actuator/health || exit 1
+    CMD curl -f http://localhost:${PORT:-8080}/actuator/health || exit 1
 
 # JVM tuning for container environments with faster startup
 ENTRYPOINT ["java", \

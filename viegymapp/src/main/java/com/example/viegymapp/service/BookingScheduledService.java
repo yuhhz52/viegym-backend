@@ -2,8 +2,6 @@ package com.example.viegymapp.service;
 
 import com.example.viegymapp.entity.BookingSession;
 import com.example.viegymapp.entity.CoachBalance;
-import com.example.viegymapp.exception.AppException;
-import com.example.viegymapp.exception.ErrorCode;
 import com.example.viegymapp.repository.BookingSessionRepository;
 import com.example.viegymapp.repository.CoachBalanceRepository;
 import lombok.RequiredArgsConstructor;
@@ -25,58 +23,21 @@ import java.util.List;
 public class BookingScheduledService {
 
     private final BookingSessionRepository bookingRepository;
-    private final CoachBalanceService coachBalanceService;
     private final CoachBalanceRepository coachBalanceRepository;
 
     /**
      * Auto-complete bookings that have passed their scheduled time
-     * Runs every hour
+     * DISABLED: Coach must manually complete bookings
      * 
-     * Similar to:
-     * - Uber: Auto-complete trip after 24 hours
-     * - Upwork: Auto-complete job after 14 days if client doesn't respond
-     * - Fiverr: Auto-complete after 3 days of delivery
+     * Previously: Auto-completed bookings after 24 hours
+     * Now: Only coach can complete bookings manually via /api/bookings/{id}/complete
      */
-    @Scheduled(cron = "0 0 * * * *") // Every hour at minute 0
-    @Transactional
-    public void autoCompleteBookings() {
-        try {
-            // Complete bookings that are 24 hours past their scheduled time
-            LocalDateTime cutoffTime = LocalDateTime.now().minusHours(24);
-            
-            List<BookingSession> oldBookings = bookingRepository
-                    .findByStatusAndBookingTimeBefore(
-                            BookingSession.BookingStatus.CONFIRMED, 
-                            cutoffTime
-                    );
-            
-            int completedCount = 0;
-            for (BookingSession booking : oldBookings) {
-                try {
-                    log.info("Auto-completing booking {}", booking.getId());
-                    
-                    // Mark as completed
-                    booking.setStatus(BookingSession.BookingStatus.COMPLETED);
-                    booking.setCoachNotes("Auto-completed by system after 24 hours");
-                    bookingRepository.save(booking);
-                    
-                    // Transfer money from pending to available
-                    coachBalanceService.completeBookingEarning(booking);
-                    
-                    completedCount++;
-                } catch (Exception e) {
-                    log.error("Error auto-completing booking {}", booking.getId(), e);
-                }
-            }
-            
-            if (completedCount > 0) {
-                log.info("Auto-completed {} bookings", completedCount);
-            }
-            
-        } catch (Exception e) {
-            log.error("Error in autoCompleteBookings scheduled task", e);
-        }
-    }
+    // @Scheduled(cron = "0 0 * * * *") // Every hour at minute 0 - DISABLED
+    // @Transactional
+    // public void autoCompleteBookings() {
+    //     // DISABLED: Coach must manually complete bookings
+    //     // This ensures coach has control over when bookings are marked as completed
+    // }
 
     /**
      * Process scheduled payouts for coaches
@@ -139,7 +100,7 @@ public class BookingScheduledService {
                 try {
                     log.info("Auto-cancelling stale booking {}", booking.getId());
                     booking.setStatus(BookingSession.BookingStatus.CANCELLED);
-                    booking.setCoachNotes("Auto-cancelled - pending too long without confirmation");
+                    booking.setCoachNotes("Tự động hủy - chờ xác nhận quá lâu");
                     bookingRepository.save(booking);
                     cancelledCount++;
                 } catch (Exception e) {

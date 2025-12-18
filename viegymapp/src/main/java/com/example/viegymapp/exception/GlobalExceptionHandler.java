@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
@@ -195,6 +196,21 @@ public class GlobalExceptionHandler {
         ApiResponse response = ApiResponse.builder()
                 .code(ErrorCode.FILE_TOO_LARGE.getCode())
                 .message(ErrorCode.FILE_TOO_LARGE.getMessage())
+                .build();
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+    // Xử lý lỗi khi UUID không hợp lệ trong @PathVariable
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ApiResponse> handleMethodArgumentTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        log.warn("Invalid argument type for parameter {}: {}", ex.getName(), ex.getValue());
+        String message = "Tham số không hợp lệ";
+        if (ex.getRequiredType() != null && ex.getRequiredType().equals(java.util.UUID.class)) {
+            message = "ID không hợp lệ. Vui lòng kiểm tra lại.";
+        }
+        ApiResponse response = ApiResponse.builder()
+                .code(ErrorCode.INVALID_REQUEST_PARAMETER.getCode())
+                .message(message)
                 .build();
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }

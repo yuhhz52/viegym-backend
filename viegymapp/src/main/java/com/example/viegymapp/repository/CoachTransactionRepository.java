@@ -32,4 +32,27 @@ public interface CoachTransactionRepository extends JpaRepository<CoachTransacti
     );
     
     List<CoachTransaction> findByPaymentId(UUID paymentId);
+    
+    /**
+     * Find all transactions for a booking session
+     */
+    @Query("""
+        SELECT ct FROM CoachTransaction ct
+        WHERE ct.bookingSession.id = :bookingSessionId
+        AND ct.type = 'EARNING'
+        ORDER BY ct.createdAt DESC
+    """)
+    List<CoachTransaction> findByBookingSessionId(@Param("bookingSessionId") UUID bookingSessionId);
+    
+    /**
+     * Find pending transactions for a booking session
+     */
+    @Query("""
+        SELECT ct FROM CoachTransaction ct
+        WHERE ct.bookingSession.id = :bookingSessionId
+        AND ct.status = 'PENDING'
+        AND ct.type = 'EARNING'
+        ORDER BY ct.createdAt DESC
+    """)
+    List<CoachTransaction> findPendingEarningsByBookingSessionId(@Param("bookingSessionId") UUID bookingSessionId);
 }

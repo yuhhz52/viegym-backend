@@ -179,4 +179,28 @@ public class AuthService {
                 .orElseThrow(() -> new AppException(ErrorCode.TOKEN_REFRESH_FAILED));
     }
 
+    /**
+     * Lấy access token từ cookie (chỉ dùng cho WebSocket)
+     * Endpoint này cho phép frontend lấy token từ cookie HttpOnly để dùng cho WebSocket
+     */
+    public TokenRefreshResponse getWebSocketToken(HttpServletRequest request) {
+        // Đọc token từ cookie HttpOnly
+        String accessToken = jwtUtils.getJwtFromCookies(request);
+        
+        if (accessToken == null || accessToken.isEmpty()) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+        
+        // Validate token
+        if (!jwtUtils.validateJwtToken(accessToken)) {
+            throw new AppException(ErrorCode.TOKEN_REFRESH_FAILED);
+        }
+        
+        // Trả về token (chỉ dùng cho WebSocket)
+        return TokenRefreshResponse.builder()
+                .accessToken(accessToken)
+                .tokenType("Bearer")
+                .build();
+    }
+
 }

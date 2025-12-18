@@ -42,7 +42,9 @@ public class NotificationServiceImpl implements NotificationService {
     private final NotificationMapper notificationMapper;
     private final NotificationPreferenceMapper preferenceMapper;
     private final SimpMessagingTemplate messagingTemplate; // WebSocket
-    private final JavaMailSender mailSender;
+    
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private JavaMailSender mailSender;
     
     @Value("${spring.mail.username:noreply@viegym.com}")
     private String fromEmail;
@@ -133,7 +135,7 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     public void generateWorkoutCompletionNotification(UUID userId, int durationMinutes, double volume) {
-        String message = String.format("💪 Tuyệt vời! Bạn đã hoàn thành buổi tập %d phút với tổng volume %.0fkg", 
+        String message = String.format("Tuyệt vời! Bạn đã hoàn thành buổi tập %d phút với tổng volume %.0fkg", 
                 durationMinutes, volume);
         
         NotificationRequest request = NotificationRequest.builder()
@@ -149,23 +151,23 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     public void generateAchievementNotification(UUID userId, String achievementType, Object... params) {
         String message = switch (achievementType) {
-            case "FIRST_WORKOUT" -> "🎉 Chúc mừng buổi tập đầu tiên! Hành trình fitness bắt đầu từ đây!";
+            case "FIRST_WORKOUT" -> "Chúc mừng buổi tập đầu tiên! Hành trình fitness bắt đầu từ đây!";
             case "WORKOUT_MILESTONE" -> {
                 int count = (int) params[0];
-                if (count == 5) yield "⭐ Tuyệt vời! Bạn đã hoàn thành 5 buổi tập!";
-                else if (count == 10) yield "💪 Milestone: 10 buổi tập! Bạn đang xây dựng thói quen tốt!";
-                else if (count == 50) yield "🚀 Chiến binh thực sự! 50 buổi tập là một thành tựu lớn!";
-                else yield String.format("🏆 Không thể tin được! %d buổi tập hoàn thành!", count);
+                if (count == 5) yield "Tuyệt vời! Bạn đã hoàn thành 5 buổi tập!";
+                else if (count == 10) yield "Milestone: 10 buổi tập! Bạn đang xây dựng thói quen tốt!";
+                else if (count == 50) yield "Chiến binh thực sự! 50 buổi tập là một thành tựu lớn!";
+                else yield String.format("Không thể tin được! %d buổi tập hoàn thành!", count);
             }
             case "VOLUME_MILESTONE" -> {
                 double volume = (double) params[0];
-                yield String.format("💎 Thành tựu Volume: Đã nâng được %.0fkg tổng cộng!", volume);
+                yield String.format("Thành tựu Volume: Đã nâng được %.0fkg tổng cộng!", volume);
             }
             case "CONSISTENCY" -> {
                 int days = (int) params[0];
-                yield String.format("📈 Tuyệt vời! Bạn đã tập %d/7 ngày trong tuần này!", days);
+                yield String.format("Tuyệt vời! Bạn đã tập %d/7 ngày trong tuần này!", days);
             }
-            default -> "🏆 Thành tựu mới đã được mở khóa!";
+            default -> "Thành tựu mới đã được mở khóa!";
         };
         
         NotificationRequest request = NotificationRequest.builder()
@@ -182,15 +184,15 @@ public class NotificationServiceImpl implements NotificationService {
     public void generateStreakNotification(UUID userId, int streakDays) {
         String message;
         if (streakDays == 7) {
-            message = "🔥 Thành tựu mở khóa: 7 ngày tập liên tiếp!";
+            message = "Thành tựu mở khóa: 7 ngày tập liên tiếp!";
         } else if (streakDays == 14) {
-            message = "🔥 Thành tựu mở khóa: 14 ngày tập liên tiếp!";
+            message = "Thành tựu mở khóa: 14 ngày tập liên tiếp!";
         } else if (streakDays == 30) {
-            message = "🔥 Thành tựu mở khóa: 30 ngày tập liên tiếp!";
+            message = "Thành tựu mở khóa: 30 ngày tập liên tiếp!";
         } else if (streakDays >= 100) {
-            message = String.format("🔥 Thành tựu mở khóa: %d ngày tập liên tiếp! Phi thường!", streakDays);
+            message = String.format("Thành tựu mở khóa: %d ngày tập liên tiếp! Phi thường!", streakDays);
         } else {
-            message = String.format("🔥 Chuỗi %d ngày! Hãy duy trì!", streakDays);
+            message = String.format("Chuỗi %d ngày! Hãy duy trì!", streakDays);
         }
         
         NotificationRequest request = NotificationRequest.builder()
@@ -218,8 +220,8 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     public void generateBookingNotification(UUID userId, String coachName, String timeSlot, Notification.NotificationType type) {
         String message = type == Notification.NotificationType.BOOKING_CONFIRMED
-                ? String.format("✅ Đã xác nhận booking với %s lúc %s", coachName, timeSlot)
-                : String.format("❌ Booking với %s lúc %s đã bị hủy", coachName, timeSlot);
+                ? String.format("Đã xác nhận booking với %s lúc %s", coachName, timeSlot)
+                : String.format("Booking với %s lúc %s đã bị hủy", coachName, timeSlot);
         
         NotificationRequest request = NotificationRequest.builder()
                 .type(type)
@@ -257,7 +259,11 @@ public class NotificationServiceImpl implements NotificationService {
             message.setSubject("[VieGym] " + notification.getTitle());
             message.setText(buildEmailContent(notification, user));
             
-            mailSender.send(message);
+            if (mailSender != null) {
+                mailSender.send(message);
+            } else {
+                log.warn("JavaMailSender is not configured. Email notification skipped.");
+            }
             
             notification.setEmailSent(true);
             notificationRepo.save(notification);

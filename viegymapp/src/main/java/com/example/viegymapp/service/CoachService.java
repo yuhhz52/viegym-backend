@@ -2,7 +2,9 @@ package com.example.viegymapp.service;
 
 import com.example.viegymapp.dto.request.AddClientRequest;
 import com.example.viegymapp.dto.request.AssignProgramRequest;
+import com.example.viegymapp.dto.request.WithdrawRequest;
 import com.example.viegymapp.dto.response.ClientResponse;
+import com.example.viegymapp.dto.response.CoachBalanceResponse;
 import com.example.viegymapp.dto.response.CoachStatsResponse;
 import com.example.viegymapp.dto.response.WorkoutProgramResponse;
 
@@ -60,4 +62,20 @@ public interface CoachService {
      * Get programs assigned to a specific client
      */
     List<WorkoutProgramResponse> getClientPrograms(UUID clientId);
+    
+    /**
+     * Get coach's balance information
+     */
+    CoachBalanceResponse getCoachBalance();
+    
+    /**
+     * Request withdrawal
+     */
+    CoachBalanceResponse withdraw(WithdrawRequest request);
+    
+    /**
+     * Process all completed bookings that still have pending transactions
+     * This is a recovery method to fix bookings that were completed before the fix
+     */
+    int processPendingCompletedBookings();
 }

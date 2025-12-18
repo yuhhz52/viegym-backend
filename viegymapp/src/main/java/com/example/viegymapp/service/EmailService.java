@@ -1,34 +1,29 @@
 package com.example.viegymapp.service;
 
-import com.example.viegymapp.config.RabbitMQConfig;
-import com.example.viegymapp.dto.message.EmailMessage;
-import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
+/**
+ * Direct email service as fallback when RabbitMQ is unavailable
+ */
 @Service
 @Slf4j
-public class EmailConsumerService {
+public class EmailService {
     
     @Autowired(required = false)
     private JavaMailSender mailSender;
     
-    @Value("${spring.mail.username:noreply@viegym.com}")
+    @Value("${spring.mail.username}")
     private String fromEmail;
     
     @Value("${viegym.app.frontendUrl:http://localhost:5173}")
     private String frontendUrl;
-    
-    /**
-     * Normalize and clean frontend URL
-     * Handles URL encoding issues and ensures proper format
-     */
+
     private String normalizeFrontendUrl(String url) {
         if (url == null || url.trim().isEmpty()) {
             log.warn("Frontend URL is null or empty, using default: http://localhost:5173");
@@ -36,20 +31,23 @@ public class EmailConsumerService {
         }
         
         String cleaned = url.trim();
-        
-        // Chỉ decode nếu URL có vẻ đã bị encode (chứa % và không phải là URL hợp lệ)
+
         try {
             if (cleaned.contains("%") && !cleaned.contains("://")) {
-                // Có thể là URL đã bị encode hoàn toàn
                 String decoded = java.net.URLDecoder.decode(cleaned, java.nio.charset.StandardCharsets.UTF_8);
                 log.info("Decoded frontend URL from: {} to: {}", cleaned, decoded);
                 cleaned = decoded;
             } else if (cleaned.contains("%") && cleaned.contains("://")) {
-                // URL có protocol nhưng có thể có phần bị encode
-                if (cleaned.matches(".*%[0-9A-Fa-f]{2}.*") && !cleaned.matches("https?://[^%]+")) {
-                    String decoded = java.net.URLDecoder.decode(cleaned, java.nio.charset.StandardCharsets.UTF_8);
-                    log.info("Decoded frontend URL (with protocol) from: {} to: {}", cleaned, decoded);
-                    cleaned = decoded;
+                int queryIndex = cleaned.indexOf('?');
+                if (queryIndex == -1) {
+                    // Không có query string, kiểm tra xem có cần decode không
+                    // Nếu URL có % nhưng không phải là ký tự hợp lệ trong URL (như %20 cho space)
+                    // thì có thể đã bị encode sai
+                    if (cleaned.matches(".*%[0-9A-Fa-f]{2}.*") && !cleaned.matches("https?://[^%]+")) {
+                        String decoded = java.net.URLDecoder.decode(cleaned, java.nio.charset.StandardCharsets.UTF_8);
+                        log.info("Decoded frontend URL (with protocol) from: {} to: {}", cleaned, decoded);
+                        cleaned = decoded;
+                    }
                 }
             }
         } catch (Exception e) {
@@ -70,64 +68,47 @@ public class EmailConsumerService {
         return cleaned;
     }
     
-    @RabbitListener(queues = RabbitMQConfig.EMAIL_QUEUE)
-    public void processEmailMessage(EmailMessage emailMessage) {
-        log.info("Received email message from queue - Type: {}, To: {}", 
-                emailMessage.getEmailType(), emailMessage.getToEmail());
-        
-        try {
-            switch (emailMessage.getEmailType()) {
-                case PASSWORD_RESET:
-                    log.info("Processing PASSWORD_RESET email for: {}", emailMessage.getToEmail());
-                    sendPasswordResetEmail(emailMessage);
-                    break;
-                case WELCOME:
-                    log.info("WELCOME email type not yet implemented");
-                    break;
-                case NOTIFICATION:
-                    log.info("NOTIFICATION email type not yet implemented");
-                    break;
-            }
-            log.info("Email sent successfully to: {}", emailMessage.getToEmail());
-        } catch (Exception e) {
-            log.error("Failed to send email to: {} - Error: {}", 
-                    emailMessage.getToEmail(), e.getMessage(), e);
-            throw new RuntimeException("Email sending failed", e); // Will go to DLQ
-        }
-    }
-    
-    private void sendPasswordResetEmail(EmailMessage emailMessage) throws MessagingException {
-        log.info("Building password reset email - From: {}, To: {}", fromEmail, emailMessage.getToEmail());
+    /**
+     * Send password reset email directly without queue
+     * Used as fallback when RabbitMQ is unavailable
+     */
+    public void sendPasswordResetEmailDirect(String toEmail, String resetToken) {
+        log.info("Sending password reset email directly (fallback mode) to: {}", toEmail);
         
         if (mailSender == null) {
             log.warn("JavaMailSender is not configured. Email sending is disabled.");
             return;
         }
         
-        // Normalize frontend URL để xử lý cả local và production
-        String cleanFrontendUrl = normalizeFrontendUrl(frontendUrl);
-        
-        log.info("Frontend URL (normalized): {}", cleanFrontendUrl);
-        
-        MimeMessage message = mailSender.createMimeMessage();
-        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-        
-        helper.setFrom(fromEmail);
-        helper.setTo(emailMessage.getToEmail());
-        helper.setSubject(emailMessage.getSubject());
-        
-        // UUID token không chứa ký tự đặc biệt, nhưng encode để an toàn
-        // Chỉ encode token, không encode toàn bộ URL
-        String encodedToken = java.net.URLEncoder.encode(emailMessage.getResetToken(), java.nio.charset.StandardCharsets.UTF_8);
-        String resetLink = cleanFrontendUrl + "/auth/reset-password?token=" + encodedToken;
-        log.info("Reset link generated: {}", resetLink);
-        
-        String htmlContent = buildPasswordResetEmailTemplate(resetLink);
-        helper.setText(htmlContent, true);
-        
-        log.info("Sending email via JavaMailSender...");
-        mailSender.send(message);
-        log.info("Email sent successfully via JavaMailSender");
+        try {
+            // Normalize frontend URL để xử lý cả local và production
+            String cleanFrontendUrl = normalizeFrontendUrl(frontendUrl);
+            
+            log.info("Frontend URL (normalized): {}", cleanFrontendUrl);
+            
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            
+            helper.setFrom(fromEmail);
+            helper.setTo(toEmail);
+            helper.setSubject("VieGym - Đặt lại mật khẩu");
+            
+            // UUID token không chứa ký tự đặc biệt, nhưng encode để an toàn
+            // Chỉ encode token, không encode toàn bộ URL
+            String encodedToken = java.net.URLEncoder.encode(resetToken, java.nio.charset.StandardCharsets.UTF_8);
+            String resetLink = cleanFrontendUrl + "/auth/reset-password?token=" + encodedToken;
+            
+            log.info("Generated reset link: {}", resetLink);
+            
+            String htmlContent = buildPasswordResetEmailTemplate(resetLink);
+            helper.setText(htmlContent, true);
+            
+            mailSender.send(message);
+            log.info("Password reset email sent directly to: {}", toEmail);
+        } catch (Exception e) {
+            log.error("Failed to send password reset email directly to: {}", toEmail, e);
+            throw new RuntimeException("Failed to send password reset email", e);
+        }
     }
     
     private String buildPasswordResetEmailTemplate(String resetLink) {
@@ -239,3 +220,4 @@ public class EmailConsumerService {
             """.formatted(resetLink, resetLink);
     }
 }
+

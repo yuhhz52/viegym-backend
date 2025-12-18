@@ -63,4 +63,8 @@ public interface BookingSessionRepository extends JpaRepository<BookingSession, 
     // Query expired PENDING bookings
     @Query("SELECT b FROM BookingSession b WHERE b.status = 'PENDING' AND b.expiredAt < :now AND b.deleted = false")
     List<BookingSession> findExpiredPendingBookings(@Param("now") LocalDateTime now);
+    
+    // Find completed bookings by coach
+    @Query("SELECT b FROM BookingSession b WHERE b.coach.id = :coachId AND b.status = 'COMPLETED' AND b.deleted = false ORDER BY b.bookingTime DESC")
+    List<BookingSession> findCompletedBookingsByCoachId(@Param("coachId") UUID coachId);
 }

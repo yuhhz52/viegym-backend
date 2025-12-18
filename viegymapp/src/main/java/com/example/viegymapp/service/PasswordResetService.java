@@ -7,6 +7,7 @@ import com.example.viegymapp.exception.ErrorCode;
 import com.example.viegymapp.repository.PasswordResetTokenRepository;
 import com.example.viegymapp.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,12 +17,14 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PasswordResetService {
     
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailProducerService emailProducerService;
+    private final EmailService emailService;
     private static final long TOKEN_EXPIRATION_MS = 60 * 60 * 1000;
     
     @Transactional
@@ -52,8 +55,19 @@ public class PasswordResetService {
         
         passwordResetTokenRepository.save(resetToken);
         
-        // Gửi email qua RabbitMQ queue
-        emailProducerService.sendPasswordResetEmail(email, token);
+        // Gửi email qua RabbitMQ queue với fallback
+        try {
+            emailProducerService.sendPasswordResetEmail(email, token);
+        } catch (Exception e) {
+            log.error("Failed to send email via RabbitMQ, using direct email fallback", e);
+            // Fallback: Send email directly if RabbitMQ fails
+            try {
+                emailService.sendPasswordResetEmailDirect(email, token);
+            } catch (Exception fallbackError) {
+                log.error("Fallback email sending also failed", fallbackError);
+                throw new RuntimeException("Failed to send password reset email", fallbackError);
+            }
+        }
     }
     
     @Transactional

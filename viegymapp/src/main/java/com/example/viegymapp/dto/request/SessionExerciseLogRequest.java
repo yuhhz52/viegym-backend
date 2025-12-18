@@ -20,4 +20,5 @@ public class SessionExerciseLogRequest {
     private Double distanceMeters;
     private Double bodyWeight;
     private String setNotes;
+    private Boolean completed;
 }

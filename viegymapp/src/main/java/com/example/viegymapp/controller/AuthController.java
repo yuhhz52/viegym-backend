@@ -73,4 +73,15 @@ public class AuthController {
                         .build())
                 .build();
     }
+    
+    /**
+     * Lấy access token từ cookie (chỉ dùng cho WebSocket)
+     * Endpoint này cho phép frontend lấy token từ cookie HttpOnly để dùng cho WebSocket
+     */
+    @GetMapping("/ws-token")
+    public ApiResponse<TokenRefreshResponse> getWebSocketToken(HttpServletRequest request) {
+        return ApiResponse.<TokenRefreshResponse>builder()
+                .result(authService.getWebSocketToken(request))
+                .build();
+    }
 }

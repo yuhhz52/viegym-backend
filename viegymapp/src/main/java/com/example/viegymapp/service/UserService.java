@@ -39,4 +39,10 @@ public interface UserService {
     // ============ ROLES ============
     UserResponse assignRoleToUser(UUID userId, PredefinedRole roleName);
     UserResponse removeRoleFromUser(UUID userId, PredefinedRole roleName);
+
+    // ============ COACHES ============
+    /**
+     * Get all coaches (users with ROLE_COACH)
+     */
+    java.util.List<UserResponse> getAllCoaches();
 }

@@ -48,6 +48,9 @@ public class SessionExerciseLog extends BaseEntity{
     @Column(name = "set_notes")
     private String setNotes;
 
+    @Column(name = "completed", nullable = false)
+    private Boolean completed = false;
+
     /**
      * Tính volume dựa trên loại bài tập
      */
@@ -68,8 +71,16 @@ public class SessionExerciseLog extends BaseEntity{
                        (repsDone != null ? repsDone : 0);
 
             case BODYWEIGHT_REPS:
-                return (bodyWeight != null ? bodyWeight : 0.0) * 
-                       (repsDone != null ? repsDone : 0);
+                // Body weight exercises: volume = (bodyWeight + weightUsed) × reps
+                // bodyWeight: body weight của người tập (ví dụ: 70kg)
+                // weightUsed: weight thêm vào (ví dụ: +10kg cho weighted pull-ups)
+                double totalWeight = (bodyWeight != null ? bodyWeight : 0.0) + 
+                                    (weightUsed != null ? weightUsed : 0.0);
+                // Nếu không có bodyWeight và weightUsed, dùng bodyWeight mặc định 70kg
+                if (totalWeight == 0.0) {
+                    totalWeight = 70.0; // Body weight mặc định
+                }
+                return totalWeight * (repsDone != null ? repsDone : 0);
 
             case ASSISTED_BODYWEIGHT:
                 // Body weight - assist weight

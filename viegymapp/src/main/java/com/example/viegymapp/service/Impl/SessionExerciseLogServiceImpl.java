@@ -12,7 +12,6 @@ import com.example.viegymapp.repository.WorkoutSessionRepository;
 import com.example.viegymapp.service.SessionExerciseLogService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -37,6 +36,11 @@ public class SessionExerciseLogServiceImpl implements SessionExerciseLogService 
         
         sessionLog.setExercise(exerciseRepo.findById(request.getExerciseId())
                 .orElseThrow(() -> new AppException(ErrorCode.EXERCISE_NOT_FOUND)));
+        
+        // Set default completed = false if not provided
+        if (sessionLog.getCompleted() == null) {
+            sessionLog.setCompleted(false);
+        }
         
         SessionExerciseLog savedLog = logRepo.save(sessionLog);
         
@@ -74,6 +78,7 @@ public class SessionExerciseLogServiceImpl implements SessionExerciseLogService 
         if (request.getDistanceMeters() != null) log.setDistanceMeters(request.getDistanceMeters());
         if (request.getBodyWeight() != null) log.setBodyWeight(request.getBodyWeight());
         if (request.getSetNotes() != null) log.setSetNotes(request.getSetNotes());
+        if (request.getCompleted() != null) log.setCompleted(request.getCompleted());
         
         SessionExerciseLog updatedLog = logRepo.save(log);
         
@@ -92,12 +97,26 @@ public class SessionExerciseLogServiceImpl implements SessionExerciseLogService 
         SessionExerciseLog log = logRepo.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.LOG_NOT_FOUND));
         
+        // Kiểm tra log đã bị xóa chưa (soft delete)
+        if (log.getDeleted() != null && log.getDeleted()) {
+            throw new AppException(ErrorCode.LOG_NOT_FOUND);
+        }
+        
+        // Kiểm tra session có tồn tại và chưa bị xóa không
+        var session = log.getSession();
+        if (session == null || (session.getDeleted() != null && session.getDeleted())) {
+            throw new AppException(ErrorCode.SESSION_NOT_FOUND);
+        }
+        
         // Tính volume trước khi xóa
         double volumeToRemove = calculateLogVolume(log);
         
         // Cập nhật user totalVolume
-        var user = log.getSession().getUser();
-        user.setTotalVolume(Math.max(0.0, user.getTotalVolume() - volumeToRemove));
+        var user = session.getUser();
+        if (user != null) {
+            double currentVolume = user.getTotalVolume() != null ? user.getTotalVolume() : 0.0;
+            user.setTotalVolume(Math.max(0.0, currentVolume - volumeToRemove));
+        }
         
         logRepo.deleteById(id);
     }
@@ -109,7 +128,20 @@ public class SessionExerciseLogServiceImpl implements SessionExerciseLogService 
         }
         try {
             return logRepo.findById(logId)
-                    .map(log -> log.getSession().getUser().getEmail().equals(username))
+                    .map(log -> {
+                        // Kiểm tra log chưa bị xóa
+                        if (log.getDeleted() != null && log.getDeleted()) {
+                            return false;
+                        }
+                        // Kiểm tra session tồn tại và chưa bị xóa
+                        var session = log.getSession();
+                        if (session == null || (session.getDeleted() != null && session.getDeleted())) {
+                            return false;
+                        }
+                        // Kiểm tra user tồn tại
+                        var user = session.getUser();
+                        return user != null && username.equals(user.getEmail());
+                    })
                     .orElse(false);
         } catch (Exception e) {
             return false;
