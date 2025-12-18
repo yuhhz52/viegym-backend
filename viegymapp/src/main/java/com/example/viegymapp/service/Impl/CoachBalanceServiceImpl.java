@@ -3,6 +3,7 @@ package com.example.viegymapp.service.Impl;
 import com.example.viegymapp.entity.*;
 import com.example.viegymapp.exception.AppException;
 import com.example.viegymapp.exception.ErrorCode;
+import com.example.viegymapp.repository.BookingSessionRepository;
 import com.example.viegymapp.repository.CoachBalanceRepository;
 import com.example.viegymapp.repository.CoachTransactionRepository;
 import com.example.viegymapp.repository.UserRepository;
@@ -16,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -26,6 +28,7 @@ public class CoachBalanceServiceImpl implements CoachBalanceService {
     private final CoachBalanceRepository coachBalanceRepository;
     private final CoachTransactionRepository coachTransactionRepository;
     private final UserRepository userRepository;
+    private final BookingSessionRepository bookingSessionRepository;
     
     @Value("${app.platform-fee-percentage:15.0}")
     private Double platformFeePercentage; // Default 15% platform fee
@@ -110,31 +113,58 @@ public class CoachBalanceServiceImpl implements CoachBalanceService {
         CoachBalance balance = coachBalanceRepository.findByCoachId(coach.getId())
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
         
-        // Find the pending transaction for this booking
-        // Assuming there's a payment for this booking
-        CoachTransaction pendingTransaction = coachTransactionRepository.findByPaymentId(
-                booking.getId() // This should be the payment ID, need to adjust
-        ).stream().findFirst().orElse(null);
+        // Find transactions for this booking session (PENDING or COMPLETED but money still in pendingBalance)
+        // Note: Transaction might be COMPLETED (from confirmPaymentSuccess) but money still in pendingBalance
+        List<CoachTransaction> transactions = coachTransactionRepository
+                .findByBookingSessionId(booking.getId());
         
-        if (pendingTransaction != null && 
-            pendingTransaction.getStatus() == CoachTransaction.TransactionStatus.PENDING) {
-            
-            BigDecimal netAmount = pendingTransaction.getNetAmount();
-            
-            // Move from pending to available
-            balance.setPendingBalance(balance.getPendingBalance().subtract(netAmount));
-            balance.setAvailableBalance(balance.getAvailableBalance().add(netAmount));
-            balance.setTotalEarned(balance.getTotalEarned().add(netAmount));
-            balance.setLastUpdated(LocalDateTime.now());
-            coachBalanceRepository.save(balance);
-            
-            // Update transaction status
-            pendingTransaction.setStatus(CoachTransaction.TransactionStatus.COMPLETED);
-            pendingTransaction.setProcessedAt(LocalDateTime.now());
-            coachTransactionRepository.save(pendingTransaction);
-            
-            log.info("Completed earning for coach {}: Net amount={}", coach.getId(), netAmount);
+        if (transactions.isEmpty()) {
+            log.warn("No earning transaction found for booking {}", booking.getId());
+            return;
         }
+        
+        // Find transaction that hasn't been processed yet (money still in pendingBalance)
+        // Check if there's money in pendingBalance that matches this booking
+        BigDecimal totalNetAmount = BigDecimal.ZERO;
+        CoachTransaction transactionToUpdate = null;
+        
+        for (CoachTransaction transaction : transactions) {
+            if (transaction.getType() == CoachTransaction.TransactionType.EARNING) {
+                BigDecimal netAmount = transaction.getNetAmount();
+                
+                // Check if this transaction's amount is still in pendingBalance
+                // If pendingBalance >= netAmount, it means this transaction hasn't been moved to available yet
+                if (balance.getPendingBalance().compareTo(netAmount) >= 0) {
+                    totalNetAmount = netAmount;
+                    transactionToUpdate = transaction;
+                    break; // Usually just one transaction per booking
+                }
+            }
+        }
+        
+        if (transactionToUpdate == null || totalNetAmount.compareTo(BigDecimal.ZERO) <= 0) {
+            log.warn("No valid transaction to process for booking {} or money already moved. Pending balance: {}", 
+                    booking.getId(), balance.getPendingBalance());
+            return;
+        }
+        
+        // Move from pending to available
+        balance.setPendingBalance(balance.getPendingBalance().subtract(totalNetAmount));
+        balance.setAvailableBalance(balance.getAvailableBalance().add(totalNetAmount));
+        balance.setTotalEarned(balance.getTotalEarned().add(totalNetAmount));
+        balance.setLastUpdated(LocalDateTime.now());
+        coachBalanceRepository.save(balance);
+        
+        // Update transaction status and description
+        transactionToUpdate.setStatus(CoachTransaction.TransactionStatus.COMPLETED);
+        transactionToUpdate.setProcessedAt(LocalDateTime.now());
+        transactionToUpdate.setDescription(
+            transactionToUpdate.getDescription().replace("(Đang chờ hoàn tất)", "(Đã hoàn tất)")
+        );
+        coachTransactionRepository.save(transactionToUpdate);
+        
+        log.info("Completed earning for coach {}: Net amount={}, Booking={}", 
+                coach.getId(), totalNetAmount, booking.getId());
     }
 
     @Override
@@ -327,6 +357,38 @@ public class CoachBalanceServiceImpl implements CoachBalanceService {
         return coachBalanceRepository.findByCoachId(coachId)
                 .map(CoachBalance::getPendingBalance)
                 .orElse(BigDecimal.ZERO);
+    }
+
+    @Override
+    @Transactional
+    public int processPendingCompletedBookings(UUID coachId) {
+        // Find all completed bookings for this coach
+        List<BookingSession> completedBookings = bookingSessionRepository
+                .findCompletedBookingsByCoachId(coachId);
+        
+        int processedCount = 0;
+        for (BookingSession booking : completedBookings) {
+            // Check if this booking has pending transactions
+            List<CoachTransaction> pendingTransactions = coachTransactionRepository
+                    .findPendingEarningsByBookingSessionId(booking.getId());
+            
+            if (!pendingTransactions.isEmpty()) {
+                try {
+                    // Process this booking
+                    completeBookingEarning(booking);
+                    processedCount++;
+                    log.info("Processed pending transaction for completed booking {} (coach {})", 
+                            booking.getId(), coachId);
+                } catch (Exception e) {
+                    log.error("Error processing booking {} for coach {}: {}", 
+                            booking.getId(), coachId, e.getMessage(), e);
+                }
+            }
+        }
+        
+        log.info("Processed {} completed bookings with pending transactions for coach {}", 
+                processedCount, coachId);
+        return processedCount;
     }
 
     @Override
